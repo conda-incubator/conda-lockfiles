@@ -12,6 +12,7 @@ from conda_lockfiles.create import (
     create_environment_from_lockfile,
     lookup_conda_records,
 )
+from conda_lockfiles.exceptions import InvalidCondaRecordOverrides
 
 from . import (
     CONDA_LOCK_METADATA_DIR,
@@ -70,26 +71,37 @@ def test_create_environment_from_explicit_file(tmp_path: Path) -> None:
     )
 
 
-def test_lookup_conda_records(tmp_path: Path) -> None:
-    md5 = "4222072737ccff51314b5ece9c7d6f5a"
-    sha256 = "5aaa366385d716557e365f0a4e9c3fca43ba196872abbbe3d56bb610d131e192"
-    spec = MatchSpec(
-        "https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda",
-        md5=md5,
-        sha256=sha256,
-    )
-    license = "ONLY_IN_TEST"
-    overrides: CondaRecordOverrides = {"license": license}
+TZDATA_MD5 = "4222072737ccff51314b5ece9c7d6f5a"
+TZDATA_SHA256 = "5aaa366385d716557e365f0a4e9c3fca43ba196872abbbe3d56bb610d131e192"
+TZDATA_SPEC = MatchSpec(
+    "https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda",
+    md5=TZDATA_MD5,
+    sha256=TZDATA_SHA256,
+)
 
-    records = lookup_conda_records({spec: overrides})
+
+def test_lookup_conda_records(tmp_path: Path) -> None:
+    overrides: CondaRecordOverrides = {
+        "depends": (depends := ("depends",)),
+        "constrains": (constrains := ("constrains",)),
+    }
+    records = lookup_conda_records({TZDATA_SPEC: overrides})
+
     assert isinstance(records, tuple)
     assert len(records) == 1
     record = records[0]
     assert record.name == "tzdata"
     # set by match spec
-    assert record.md5 == md5
-    assert record.sha256 == sha256
+    assert record.md5 == TZDATA_MD5
+    assert record.sha256 == TZDATA_SHA256
     # set by overrides
-    assert record.license == license
+    assert record.depends == depends
+    assert record.constrains == constrains
     # only known after downloading
     assert record.size == 122_968
+
+
+def test_invalid_overrides() -> None:
+    overrides: CondaRecordOverrides = {"license": "ONLY_IN_TEST"}
+    with pytest.raises(InvalidCondaRecordOverrides):
+        lookup_conda_records({TZDATA_SPEC: overrides})
