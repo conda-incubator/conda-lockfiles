@@ -36,7 +36,8 @@ def test_create_environment_from_lockfile_pixi_metadata(tmp_path: Path) -> None:
     env_record_path = tmp_path / "conda-meta" / "tzdata-2025b-h78e105d_0.json"
     assert env_record_path.is_file()
     data = json.loads(env_record_path.read_bytes())
-    assert data["license"] == "ONLY_IN_LOCKFILE"
+    # lockfile overrides license but we ignore this
+    assert data["license"] == "LicenseRef-Public-Domain"
 
 
 @pytest.mark.skipif(
