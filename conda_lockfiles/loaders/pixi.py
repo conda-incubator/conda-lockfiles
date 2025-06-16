@@ -7,7 +7,7 @@ from conda.base.context import context
 from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAML
 
-from ..constants import PIXI_LOCK_FILE
+from ..constants import HASH_KEYS, OVERRIDE_KEYS, PIXI_LOCK_FILE
 from .base import BaseLoader, subdict
 
 if TYPE_CHECKING:
@@ -90,6 +90,6 @@ class PixiLoader(BaseLoader):
         url: str,
         package: dict[str, Any],
     ) -> tuple[MatchSpec, CondaRecordOverrides]:
-        hashes = subdict(package, ["md5", "sha256"])
-        overrides: CondaRecordOverrides = subdict(package, ["license"])  # type: ignore[assignment]
+        hashes = subdict(package, HASH_KEYS)
+        overrides: CondaRecordOverrides = subdict(package, OVERRIDE_KEYS)  # type: ignore[assignment]
         return MatchSpec(url, **hashes), overrides

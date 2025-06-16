@@ -7,7 +7,7 @@ from conda.base.context import context
 from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAML
 
-from ..constants import CONDA_LOCK_FILE
+from ..constants import CONDA_LOCK_FILE, HASH_KEYS
 from .base import BaseLoader, subdict
 
 if TYPE_CHECKING:
@@ -74,7 +74,7 @@ class CondaLockV1Loader(BaseLoader):
         package: dict[str, Any],
     ) -> tuple[MatchSpec, CondaRecordOverrides]:
         url = package["url"]
-        hashes = subdict(package.get("hash", {}), ["md5", "sha256"])
+        hashes = subdict(package.get("hash", {}), HASH_KEYS)
         overrides: CondaRecordOverrides = {
             # conda-lock v1 stores dependencies as a mapping of package name -> spec,
             # convert to a list of match spec strings

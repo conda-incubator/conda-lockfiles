@@ -16,6 +16,7 @@ from conda.exceptions import CondaExitZero, DryRunExit
 from conda.models.prefix_graph import PrefixGraph
 from conda.models.records import PackageRecord
 
+from .constants import OVERRIDE_KEYS
 from .exceptions import (
     InvalidCondaRecordOverrides,
     LockfileFormatNotSupported,
@@ -31,9 +32,6 @@ if TYPE_CHECKING:
     from conda.common.path import PathType
 
     from .types import CondaRecords, CondaSpecs, PypiRecords
-
-
-OVERRIDE_KEYS = {"depends", "constrains"}
 
 
 def create_environment_from_lockfile(
