@@ -17,6 +17,7 @@ from conda.models.prefix_graph import PrefixGraph
 from conda.models.records import PackageRecord
 
 from .exceptions import (
+    InvalidCondaRecordOverrides,
     LockfileFormatNotSupported,
     MissingPackageCacheRecord,
     MultiplePackageCacheRecords,
@@ -30,6 +31,9 @@ if TYPE_CHECKING:
     from conda.common.path import PathType
 
     from .types import CondaRecords, CondaSpecs, PypiRecords
+
+
+OVERRIDE_KEYS = {"depends", "constrains"}
 
 
 def create_environment_from_lockfile(
@@ -119,6 +123,10 @@ def lookup_conda_records(conda_specs: CondaSpecs) -> CondaRecords:
             raise MissingPackageCacheRecord(match_spec)
         elif len(cache_records) > 1:
             raise MultiplePackageCacheRecords(match_spec)
+        elif invalid_overrides := set(overrides) - OVERRIDE_KEYS:
+            # limit what keys from repodata.json are allowed to be overridden
+            # do not want to allow overriding things like license, etc.
+            raise InvalidCondaRecordOverrides(match_spec, invalid_overrides)
         conda_records.append(PackageRecord.from_objects(cache_records[0], **overrides))
     return tuple(conda_records)
 

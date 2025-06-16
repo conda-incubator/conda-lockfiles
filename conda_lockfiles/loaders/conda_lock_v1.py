@@ -21,30 +21,6 @@ yaml: Final = YAML(typ="safe")
 
 
 class CondaLockV1Loader(BaseLoader):
-    """
-    Loader for conda-lock v1 format.
-
-    See conda_lock.lockfile.v1.models.LockedDependency for schema:
-    https://github.com/conda/conda-lock/blob/38e425f7a5941dc1d1bafafbefdec01f26aa5472/conda_lock/lockfile/v1/models.py#L48-L57
-
-    The following fields from LockedDependency are used:
-    - to filter packages (see to_conda_and_pypi):
-        - platform: skip if platform does not match
-        - category: skip if not main
-        - optional: skip if true
-        - manager: distinguish between conda and pip dependencies
-    - as overrides for package record (see _parse_package):
-        - url: used as is
-        - hash: flatten into md5 and sha256
-        - dependencies: convert to a list of match spec strings
-
-    The following fields are ignored:
-    - name
-    - version
-    - source
-    - build
-    """
-
     @classmethod
     def supports(cls, path: PathType) -> bool:
         path = Path(path)

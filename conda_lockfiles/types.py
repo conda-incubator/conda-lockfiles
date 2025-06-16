@@ -14,11 +14,11 @@ if TYPE_CHECKING:
 
         Attributes:
             depends: List of package dependencies.
-            license: License string for the package.
+            constrains: List of package constrains.
         """
 
         depends: NotRequired[list[str]]
-        license: NotRequired[str]
+        constrains: NotRequired[list[str]]
 
     CondaSpecsTuple = tuple[MatchSpec, ...]
     CondaSpecsMapping = Mapping[MatchSpec, CondaRecordOverrides]

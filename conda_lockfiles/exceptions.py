@@ -35,3 +35,10 @@ class MultiplePackageCacheRecords(CondaError):
     def __init__(self, match_spec: MatchSpec):
         message = f"Multiple package cache records for: {match_spec}"
         super().__init__(message)
+
+
+class InvalidCondaRecordOverrides(CondaError):
+    def __init__(self, match_spec: MatchSpec, invalid_overrides: set[str]):
+        keys = ", ".join(sorted(invalid_overrides))
+        message = f"Invalid overrides for {match_spec}: {keys}"
+        super().__init__(message)
