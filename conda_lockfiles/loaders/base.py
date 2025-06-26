@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
     from typing import Any
 
     from conda.common.path import PathType
-    from conda.models.records import PackageRecord
+
+    from ..types import CondaSpecs, PypiRecords
 
 
 class BaseLoader(ABC):
@@ -24,7 +26,7 @@ class BaseLoader(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _load(self, path: PathType) -> dict[str, Any]:
+    def _load(self, path: PathType) -> Any:
         raise NotImplementedError
 
     @abstractmethod
@@ -32,19 +34,11 @@ class BaseLoader(ABC):
         self,
         environment: str | None = None,
         platform: str = context.subdir,
-    ) -> tuple[tuple[PackageRecord, ...], tuple[str, ...]]:
+    ) -> tuple[CondaSpecs, PypiRecords]:
         raise NotImplementedError
 
 
-def build_number_from_build_string(build_string: str) -> int:
-    "Assume build number is underscore-separated, all-digit substring in build_string"
-    return int(
-        next(
-            (
-                part
-                for part in build_string.split("_")
-                if all(digit.isdigit() for digit in part)
-            ),
-            0,
-        )
-    )
+# FUTURE: Python 3.12+ use generic function syntax
+# def subdict[T: str](mappping: Mapping[str, Any], keys: Iterable[T]) -> dict[T, Any]:
+def subdict(mapping: Mapping[str, Any], keys: Iterable[str]) -> dict[str, Any]:
+    return {key: mapping[key] for key in keys if key in mapping}

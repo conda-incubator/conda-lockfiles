@@ -5,9 +5,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.common.compat import on_win
+from conda.models.match_spec import MatchSpec
 
 from conda_lockfiles.constants import CONDA_LOCK_FILE, PIXI_LOCK_FILE
-from conda_lockfiles.create import create_environment_from_lockfile
+from conda_lockfiles.create import (
+    create_environment_from_lockfile,
+    lookup_conda_records,
+)
+from conda_lockfiles.exceptions import InvalidCondaRecordOverrides
 
 from . import (
     CONDA_LOCK_METADATA_DIR,
@@ -17,6 +22,8 @@ from . import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from conda_lockfiles.loaders.base import CondaRecordOverrides
 
 
 def test_create_environment_from_lockfile_pixi_metadata(tmp_path: Path) -> None:
@@ -29,7 +36,8 @@ def test_create_environment_from_lockfile_pixi_metadata(tmp_path: Path) -> None:
     env_record_path = tmp_path / "conda-meta" / "tzdata-2025b-h78e105d_0.json"
     assert env_record_path.is_file()
     data = json.loads(env_record_path.read_bytes())
-    assert data["license"] == "ONLY_IN_LOCKFILE"
+    # lockfile overrides license but we ignore this
+    assert data["license"] == "LicenseRef-Public-Domain"
 
 
 @pytest.mark.skipif(
@@ -62,3 +70,39 @@ def test_create_environment_from_explicit_file(tmp_path: Path) -> None:
         data["sha256"]
         == "3c9fefdfb2335e8641642e964cfaf20513d40ec709ab559b47b52d99b2e46fea"
     )
+
+
+TZDATA_MD5 = "4222072737ccff51314b5ece9c7d6f5a"
+TZDATA_SHA256 = "5aaa366385d716557e365f0a4e9c3fca43ba196872abbbe3d56bb610d131e192"
+TZDATA_SPEC = MatchSpec(
+    "https://conda.anaconda.org/conda-forge/noarch/tzdata-2025b-h78e105d_0.conda",
+    md5=TZDATA_MD5,
+    sha256=TZDATA_SHA256,
+)
+
+
+def test_lookup_conda_records(tmp_path: Path) -> None:
+    overrides: CondaRecordOverrides = {
+        "depends": (depends := ("depends",)),
+        "constrains": (constrains := ("constrains",)),
+    }
+    records = lookup_conda_records({TZDATA_SPEC: overrides})
+
+    assert isinstance(records, tuple)
+    assert len(records) == 1
+    record = records[0]
+    assert record.name == "tzdata"
+    # set by match spec
+    assert record.md5 == TZDATA_MD5
+    assert record.sha256 == TZDATA_SHA256
+    # set by overrides
+    assert record.depends == depends
+    assert record.constrains == constrains
+    # only known after downloading
+    assert record.size == 122_968
+
+
+def test_invalid_overrides() -> None:
+    overrides: CondaRecordOverrides = {"license": "ONLY_IN_TEST"}
+    with pytest.raises(InvalidCondaRecordOverrides):
+        lookup_conda_records({TZDATA_SPEC: overrides})
