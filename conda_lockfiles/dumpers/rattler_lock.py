@@ -56,8 +56,6 @@ def export_to_rattler_lock_v6(prefix: str, lockfile_path: str | None) -> None:
     if None in unique_channels:
         raise EnvironmentExportNotSupported(LOCKFILE_FORMAT)
     channels = sorted([{"url": str(url)} for url in unique_channels])
-    if None in channels:
-        raise Exception
     packages = sorted(
         [_record_to_rattler_lock_v6(record) for record in prefix_data.iter_records()],
         key=lambda x: x["conda"],
