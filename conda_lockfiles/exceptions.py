@@ -17,5 +17,8 @@ class ExportLockfileFormatNotSupported(CondaError):
 
 class EnvironmentExportNotSupported(CondaError):
     def __init__(self, lockfile_format: str):
-        message = f"The specified environment cannot be exporting to lockfile format {lockfile_format}"
+        message = (
+            "The specified environment cannot be exporting "
+            f"to lockfile format {lockfile_format}"
+        )
         super().__init__(message)
