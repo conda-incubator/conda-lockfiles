@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from ruamel.yaml import YAML
 
 from conda_lockfiles.dumpers import rattler_lock
+from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
-from .. import SINGLE_PACKAGE_ENV
+from .. import SINGLE_PACKAGE_ENV, SINGLE_PACKAGE_NO_URL_ENV
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -52,3 +54,11 @@ def test_export_to_rattler_lock_v6(tmp_path: Path) -> None:
     assert package["license"] == "BSD-3-Clause"
     assert package["size"] == 6988
     assert "python 3.13.* *_cp313" in package["constrains"]
+
+
+def test_export_to_rattler_lock_v6_no_url(tmp_path: Path) -> None:
+    lockfile_path = tmp_path / "pixi.lock"
+    with pytest.raises(EnvironmentExportNotSupported):
+        rattler_lock.export_to_rattler_lock_v6(
+            str(SINGLE_PACKAGE_NO_URL_ENV), str(lockfile_path)
+        )
