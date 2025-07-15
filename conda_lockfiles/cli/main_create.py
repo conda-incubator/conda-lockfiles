@@ -47,5 +47,8 @@ def execute(args: argparse.Namespace) -> int:
         prefix=context.target_prefix,
         environment=args.environment,
         platform=args.platform,
+        dry_run=context.dry_run,
+        download_only=context.download_only,
+        verbose=not context.json and context.verbose,
     )
     return 0

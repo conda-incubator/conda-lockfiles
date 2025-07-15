@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-import pytest
-
-from conda_lockfiles.loaders.base import build_number_from_build_string
+from conda_lockfiles.loaders.base import subdict
 
 
-@pytest.mark.parametrize(
-    "build_string",
-    [
-        "py310_h0d85af4_0",
-        "py36cuda8.0cudnn5.1_0",
-        "cuda92py36h1667eeb_0",
-        "h244a1a9_0_cpu",
-    ],
-)
-def test_build_number_from_build_string(build_string: str) -> None:
-    assert build_number_from_build_string(build_string) == 0
+def test_subdict() -> None:
+    mapping = {"a": 1, "b": 2, "c": 3}
+    assert subdict(mapping, ["a"]) == {"a": 1}
+    assert subdict(mapping, ["b"]) == {"b": 2}
+    assert subdict(mapping, ["c"]) == {"c": 3}
+    assert subdict(mapping, ["a", "b"]) == {"a": 1, "b": 2}
+    assert subdict(mapping, ["a", "d"]) == {"a": 1}

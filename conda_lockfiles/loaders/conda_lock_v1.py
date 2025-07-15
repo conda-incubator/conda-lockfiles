@@ -4,22 +4,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
+from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAML
 
-from ..constants import CONDA_LOCK_FILE
-from .base import BaseLoader
-from .records_from_urls import records_from_conda_urls
+from ..constants import CONDA_LOCK_FILE, HASH_KEYS
+from .base import BaseLoader, subdict
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Final
 
     from conda.common.path import PathType
-    from conda.models.records import PackageRecord
 
-    from .records_from_urls import CondaPackageMetadata, CondaPackageURL
+    from ..types import CondaRecordOverrides, CondaSpecsMapping, PypiRecords
 
-
-yaml = YAML(typ="safe")
+yaml: Final = YAML(typ="safe")
 
 
 class CondaLockV1Loader(BaseLoader):
@@ -40,50 +38,49 @@ class CondaLockV1Loader(BaseLoader):
 
     def to_conda_and_pypi(
         self,
-        environment: str = "default",
+        environment: str | None = None,  # unused
         platform: str = context.subdir,
-    ) -> tuple[tuple[PackageRecord, ...], tuple[str, ...]]:
-        metadata = self.data["metadata"]
-        if platform not in metadata["platforms"]:
+    ) -> tuple[CondaSpecsMapping, PypiRecords]:
+        platforms = self.data.get("metadata", {}).get("platforms")
+        if platform not in platforms:
             raise ValueError(
                 f"Lockfile does not list packages for platform {platform}. "
-                f"Available platforms: {sorted(metadata['platforms'])}."
+                f"Available platforms: {', '.join(sorted(platforms))}."
             )
 
+        conda = {}
         pypi = []
-        conda_metadata_by_url: dict[CondaPackageURL, CondaPackageMetadata] = {}
         for package in self.data["package"]:
-            if package["platform"] != platform:
+            if package.get("platform") != platform:
                 continue
-            if package["category"] != "main":
+            if package.get("category") != "main":
                 continue
-            if package["optional"]:
+            if package.get("optional"):
                 continue
-            if package["manager"] == "conda":
-                conda_metadata_by_url[package["url"]] = self._package_to_metadata(
-                    package
-                )
-            elif package["manager"] == "pip":
-                pypi.append(package["url"])
 
-        conda = records_from_conda_urls(conda_metadata_by_url)
-        return conda, pypi
+            package_type = package.get("manager")
+            if package_type == "conda":
+                spec, overrides = self._parse_package(package)
+                conda[spec] = overrides
+            elif package_type == "pip":
+                pypi.append(package["url"])
+            else:
+                raise ValueError(f"Unknown package type: {package_type}")
+
+        return conda, tuple(pypi)
 
     @staticmethod
-    def _package_to_metadata(package: dict[str, Any]) -> CondaPackageMetadata:
-        """Return conda record metadata from lockfile package metadata."""
-        depends = [
-            f"{name} {spec}" for name, spec in package.get("dependencies", {}).items()
-        ]
-        checksums = {}
-        hash_data = package.get("hash", {})
-        for checksum_name in ["md5", "sha256"]:
-            if checksum_name in hash_data:
-                checksums[checksum_name] = hash_data[checksum_name]
-        metadata = {
-            "name": package["name"],
-            "version": package["version"],
-            "depends": depends,
-            **checksums,
+    def _parse_package(
+        package: dict[str, Any],
+    ) -> tuple[MatchSpec, CondaRecordOverrides]:
+        url = package["url"]
+        hashes = subdict(package.get("hash", {}), HASH_KEYS)
+        overrides: CondaRecordOverrides = {
+            # conda-lock v1 stores dependencies as a mapping of package name -> spec,
+            # convert to a list of match spec strings
+            "depends": [
+                f"{name} {spec}"
+                for name, spec in package.get("dependencies", {}).items()
+            ]
         }
-        return metadata
+        return MatchSpec(url, **hashes), overrides
