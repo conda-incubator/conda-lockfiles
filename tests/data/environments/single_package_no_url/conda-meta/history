@@ -1,0 +1,5 @@
+==> 2025-06-04 11:11:44 <==
+# cmd: /Users/jhelmus/mc3/bin/conda create --prefix single_package --override-channels -c conda-forge python_abi --platform linux-64
+# conda version: 25.5.0
++conda-forge/noarch::python_abi-3.13-7_cp313
+# update specs: ['python_abi']

@@ -1,0 +1,32 @@
+{
+  "build": "7_cp313",
+  "build_number": 7,
+  "channel": "https://conda.anaconda.org/conda-forge",
+  "constrains": [
+    "python 3.13.* *_cp313"
+  ],
+  "depends": [],
+  "extracted_package_dir": "/Users/jhelmus/mc3/pkgs/python_abi-3.13-7_cp313",
+  "files": [],
+  "fn": "python_abi-3.13-7_cp313.conda",
+  "license": "BSD-3-Clause",
+  "link": {
+    "source": "/Users/jhelmus/mc3/pkgs/python_abi-3.13-7_cp313",
+    "type": 1
+  },
+  "md5": "e84b44e6300f1703cb25d29120c5b1d8",
+  "name": "python_abi",
+  "noarch": "generic",
+  "package_tarball_full_path": "/Users/jhelmus/mc3/pkgs/python_abi-3.13-7_cp313.conda",
+  "package_type": "noarch_generic",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "python_abi",
+  "sha256": "0595134584589064f56e67d3de1d8fcbb673a972946bce25fb593fb092fdcd97",
+  "size": 6988,
+  "subdir": "noarch",
+  "timestamp": 1745258852000,
+  "version": "3.13"
+}

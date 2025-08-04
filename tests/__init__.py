@@ -15,3 +15,4 @@ EXPLICIT_LOCK_DIR = DATA_DIR / "explicit"
 # Enviroments
 ENVIRONMENTS_DIR = DATA_DIR / "environments"
 SINGLE_PACKAGE_ENV = ENVIRONMENTS_DIR / "single_package"
+SINGLE_PACKAGE_NO_URL_ENV = ENVIRONMENTS_DIR / "single_package_no_url"
