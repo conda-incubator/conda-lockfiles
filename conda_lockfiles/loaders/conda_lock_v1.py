@@ -14,9 +14,36 @@ from .base import load_yaml
 from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
-    from typing import Any, ClassVar, Final
+    from typing import Any, ClassVar, Final, NotRequired, TypedDict
 
     from conda.common.path import PathType
+
+    class CondaLockV1Hash(TypedDict):
+        md5: NotRequired[str]
+        sha256: NotRequired[str]
+
+    CondaLockV1Dependencies = dict[str, str]
+
+    class CondaLockV1Package(TypedDict):
+        name: str
+        version: str
+        manager: str
+        platform: str
+        dependencies: CondaLockV1Dependencies
+        url: str
+        hash: CondaLockV1Hash
+        category: str
+        optional: bool
+
+    class CondaLockV1Channel(TypedDict):
+        url: str
+        used_env_vars: list
+
+    class CondaLockV1Metadata(TypedDict):
+        content_hash: dict[str, str]
+        channels: list[CondaLockV1Channel]
+        platforms: list[str]
+        sources: list[str]
 
 
 #: Mapping of supported package types (as used in the lockfile) to package
@@ -32,8 +59,8 @@ def _conda_lock_v1_to_env(
     *,
     # conda-lock.yml fields
     version: int,
-    metadata: dict[str, Any],
-    package: list[dict[str, Any]],
+    metadata: CondaLockV1Metadata,
+    package: list[CondaLockV1Package],
     **kwargs,
 ) -> Environment:
     if version != 1:
@@ -85,7 +112,7 @@ def _conda_lock_v1_package_to_record_overrides(
     *,
     manager: str,
     url: str,
-    dependencies: dict[str, str] = {},
+    dependencies: CondaLockV1Dependencies,
     platform: str,
     **kwargs,
 ) -> dict[str, Any]:
