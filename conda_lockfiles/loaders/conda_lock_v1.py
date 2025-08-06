@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.common.io import dashlist
+from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
@@ -18,7 +19,12 @@ if TYPE_CHECKING:
     from conda.common.path import PathType
 
 
-EXTERNAL_PACKAGE_MAPPING: Final = {"pip": "pypi"}
+#: Mapping of supported package types (as used in the lockfile) to package
+#: managers (as used in the environment)
+PACKAGE_TYPES: Final = {
+    "conda": "conda",
+    "pip": "pypi",
+}
 
 
 def _conda_lock_v1_to_env(
@@ -30,16 +36,19 @@ def _conda_lock_v1_to_env(
     package: list[dict[str, Any]],
     **kwargs,
 ) -> Environment:
-    if platform not in metadata["platforms"]:
+    if version != 1:
+        raise ValueError(f"Unsupported version: {version}")
+    elif kwargs:
+        raise ValueError(f"Unexpected keyword arguments: {dashlist(kwargs)}")
+    elif platform not in metadata["platforms"]:
         raise ValueError(
             f"Lockfile does not list packages for platform {platform}. "
             f"Available platforms: {dashlist(sorted(metadata['platforms']))}."
         )
-    elif kwargs:
-        raise ValueError(f"Unexpected keyword arguments: {dashlist(kwargs)}")
 
+    channels = metadata["channels"]
     config = EnvironmentConfig(
-        channels=[channel["url"] for channel in metadata["channels"]],
+        channels=[Channel.from_url(channel["url"]) for channel in channels],
     )
 
     explicit_packages: dict[str, dict[str, Any]] = {}
@@ -57,9 +66,12 @@ def _conda_lock_v1_to_env(
 
         # group packages by manager
         if (manager := pkg["manager"]) == "conda":
-            explicit_packages[url] = _conda_lock_v1_package_to_record_metadata(**pkg)
+            explicit_packages[url] = _conda_lock_v1_package_to_record_overrides(**pkg)
         else:
-            key = EXTERNAL_PACKAGE_MAPPING.get(manager, manager)
+            try:
+                key = PACKAGE_TYPES[manager]
+            except KeyError:
+                raise ValueError(f"Unknown package type: {manager}")
             external_packages.setdefault(key, []).append(url)
 
     return Environment(
@@ -69,11 +81,17 @@ def _conda_lock_v1_to_env(
     )
 
 
-def _conda_lock_v1_package_to_record_metadata(
-    *, manager: str, dependencies: dict[str, str] = {}, platform: str, **kwargs
+def _conda_lock_v1_package_to_record_overrides(
+    *,
+    manager: str,
+    url: str,
+    dependencies: dict[str, str] = {},
+    platform: str,
+    **kwargs,
 ) -> dict[str, Any]:
     if manager != "conda":
         raise ValueError(f"Unsupported manager: {manager}")
+    # ignore url
     return {
         # dependencies are converted to a list of strings
         "depends": [f"{name} {version}" for name, version in dependencies.items()],
@@ -101,4 +119,7 @@ class CondaLockV1Loader(EnvironmentSpecBase):
 
     @property
     def env(self) -> Environment:
-        return _conda_lock_v1_to_env(platform=context.subdir, **load_yaml(self.path))
+        return _conda_lock_v1_to_env(
+            platform=context.subdir,
+            **load_yaml(self.path),
+        )
