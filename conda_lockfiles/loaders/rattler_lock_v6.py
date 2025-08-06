@@ -7,34 +7,34 @@ from typing import TYPE_CHECKING
 from conda.base.constants import KNOWN_SUBDIRS
 from conda.base.context import context
 from conda.models.records import PackageRecord
-from ruamel.yaml import YAML
+from conda.plugins.types import EnvironmentSpecBase
 
 from ..constants import PIXI_LOCK_FILE
-from .base import BaseLoader, build_number_from_build_string
+from .base import build_number_from_build_string, load_yaml
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from conda.common.path import PathType
+    from conda.models.environment import Environment
 
-yaml = YAML(typ="safe")
+
+def _pixi_lock_to_env():
+    pass
 
 
-class RattlerLockV6Loader(BaseLoader):
-    @classmethod
-    def supports(cls, path: PathType) -> bool:
-        path = Path(path)
-        if path.name != PIXI_LOCK_FILE or not path.exists():
-            return False
-        data = cls._load(path)
-        if data["version"] != 6:
-            return False
-        return True
+class RattlerLockV6Loader(EnvironmentSpecBase):
+    def __init__(self, path: PathType):
+        self.path = Path(path).resolve()
 
-    @staticmethod
-    def _load(path: PathType) -> dict[str, Any]:
-        with open(path) as f:
-            return yaml.load(f)
+    def can_handle(self) -> bool:
+        return (
+            self.path.name == PIXI_LOCK_FILE
+            and self.path.exists()
+            and load_yaml(self.path)["version"] == 6
+        )
+
+    @property
+    def env(self) -> Environment:
+        return _pixi_lock_to_env(**load_yaml(self.path))
 
     def to_conda_and_pypi(
         self,

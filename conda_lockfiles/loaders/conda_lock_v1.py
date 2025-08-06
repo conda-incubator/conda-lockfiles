@@ -4,86 +4,101 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from ruamel.yaml import YAML
+from conda.common.io import dashlist
+from conda.models.environment import Environment, EnvironmentConfig
+from conda.plugins.types import EnvironmentSpecBase
 
-from ..constants import CONDA_LOCK_FILE
-from .base import BaseLoader
+from ..dumpers.conda_lock_v1 import CONDA_LOCK_FILE
+from .base import load_yaml
 from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, ClassVar, Final
 
     from conda.common.path import PathType
-    from conda.models.records import PackageRecord
-
-    from .records_from_urls import CondaPackageMetadata, CondaPackageURL
 
 
-yaml = YAML(typ="safe")
+EXTERNAL_PACKAGE_MAPPING: Final = {"pip": "pypi"}
 
 
-class CondaLockV1Loader(BaseLoader):
-    @classmethod
-    def supports(cls, path: PathType) -> bool:
-        path = Path(path)
-        if path.name != CONDA_LOCK_FILE or not path.exists():
-            return False
-        data = cls._load(path)
-        if data["version"] != 1:
-            return False
-        return True
+def _conda_lock_v1_to_env(
+    platform: str = context.subdir,
+    *,
+    # conda-lock.yml fields
+    version: int,
+    metadata: dict[str, Any],
+    package: list[dict[str, Any]],
+    **kwargs,
+) -> Environment:
+    if platform not in metadata["platforms"]:
+        raise ValueError(
+            f"Lockfile does not list packages for platform {platform}. "
+            f"Available platforms: {dashlist(sorted(metadata['platforms']))}."
+        )
+    elif kwargs:
+        raise ValueError(f"Unexpected keyword arguments: {dashlist(kwargs)}")
 
-    @staticmethod
-    def _load(path: PathType) -> dict[str, Any]:
-        with open(path) as f:
-            return yaml.load(f)
+    config = EnvironmentConfig(
+        channels=[channel["url"] for channel in metadata["channels"]],
+    )
 
-    def to_conda_and_pypi(
-        self,
-        environment: str = "default",
-        platform: str = context.subdir,
-    ) -> tuple[tuple[PackageRecord, ...], tuple[str, ...]]:
-        metadata = self.data["metadata"]
-        if platform not in metadata["platforms"]:
-            raise ValueError(
-                f"Lockfile does not list packages for platform {platform}. "
-                f"Available platforms: {sorted(metadata['platforms'])}."
-            )
+    explicit_packages: dict[str, dict[str, Any]] = {}
+    external_packages: dict[str, list[str]] = {}
+    for pkg in package:
+        # packages to ignore
+        if pkg["platform"] != platform:
+            continue
+        if pkg["category"] != "main":
+            continue
+        if pkg["optional"]:
+            continue
+        if not (url := pkg.get("url")):
+            continue
 
-        pypi = []
-        conda_metadata_by_url: dict[CondaPackageURL, CondaPackageMetadata] = {}
-        for package in self.data["package"]:
-            if package["platform"] != platform:
-                continue
-            if package["category"] != "main":
-                continue
-            if package["optional"]:
-                continue
-            if package["manager"] == "conda":
-                conda_metadata_by_url[package["url"]] = self._package_to_metadata(
-                    package
-                )
-            elif package["manager"] == "pip":
-                pypi.append(package["url"])
+        # group packages by manager
+        if (manager := pkg["manager"]) == "conda":
+            explicit_packages[url] = _conda_lock_v1_package_to_record_metadata(**pkg)
+        else:
+            key = EXTERNAL_PACKAGE_MAPPING.get(manager, manager)
+            external_packages.setdefault(key, []).append(url)
 
-        conda = records_from_conda_urls(conda_metadata_by_url)
-        return conda, pypi
+    return Environment(
+        config=config,
+        explicit_packages=records_from_conda_urls(explicit_packages),
+        external_packages=external_packages,
+    )
 
-    @staticmethod
-    def _package_to_metadata(package: dict[str, Any]) -> CondaPackageMetadata:
-        """Return conda record metadata from lockfile package metadata."""
-        depends = [
-            f"{name} {spec}" for name, spec in package.get("dependencies", {}).items()
-        ]
-        checksums = {}
-        hash_data = package.get("hash", {})
-        for checksum_name in ["md5", "sha256"]:
-            if checksum_name in hash_data:
-                checksums[checksum_name] = hash_data[checksum_name]
-        metadata = {
-            "name": package["name"],
-            "version": package["version"],
-            "depends": depends,
-            **checksums,
-        }
-        return metadata
+
+def _conda_lock_v1_package_to_record_metadata(
+    *, manager: str, dependencies: dict[str, str] = {}, platform: str, **kwargs
+) -> dict[str, Any]:
+    if manager != "conda":
+        raise ValueError(f"Unsupported manager: {manager}")
+    return {
+        # dependencies are converted to a list of strings
+        "depends": [f"{name} {version}" for name, version in dependencies.items()],
+        # platform is renamed to subdir
+        "subdir": platform,
+        # other fields are passed through
+        **kwargs,
+    }
+
+
+class CondaLockV1Loader(EnvironmentSpecBase):
+    format: ClassVar[str] = "conda-lock-v1"
+    extensions: ClassVar[set[str]] = {".yml", ".yaml"}
+    detection_supported: ClassVar[bool] = True
+
+    def __init__(self, path: PathType):
+        self.path = Path(path).resolve()
+
+    def can_handle(self) -> bool:
+        return (
+            self.path.name == CONDA_LOCK_FILE
+            and self.path.exists()
+            and load_yaml(self.path)["version"] == 1
+        )
+
+    @property
+    def env(self) -> Environment:
+        return _conda_lock_v1_to_env(platform=context.subdir, **load_yaml(self.path))
