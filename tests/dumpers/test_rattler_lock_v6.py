@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 from ruamel.yaml import YAML
 
+from conda_lockfiles.constants import PIXI_LOCK_FILE
 from conda_lockfiles.dumpers import rattler_lock
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
@@ -19,7 +20,7 @@ def test_export_to_rattler_lock_v6(tmp_path: Path) -> None:
         "https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-7_cp313.conda"
     )
 
-    lockfile_path = tmp_path / "pixi.lock"
+    lockfile_path = tmp_path / PIXI_LOCK_FILE
     rattler_lock.export_to_rattler_lock_v6(str(SINGLE_PACKAGE_ENV), str(lockfile_path))
     assert lockfile_path.exists()
 
@@ -57,7 +58,7 @@ def test_export_to_rattler_lock_v6(tmp_path: Path) -> None:
 
 
 def test_export_to_rattler_lock_v6_no_url(tmp_path: Path) -> None:
-    lockfile_path = tmp_path / "pixi.lock"
+    lockfile_path = tmp_path / PIXI_LOCK_FILE
     with pytest.raises(EnvironmentExportNotSupported):
         rattler_lock.export_to_rattler_lock_v6(
             str(SINGLE_PACKAGE_NO_URL_ENV), str(lockfile_path)
