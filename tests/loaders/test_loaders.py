@@ -4,7 +4,6 @@ from conda_lockfiles.loaders import (
     LOADERS,
     BaseLoader,
     CondaLockV1Loader,
-    ExplicitLoader,
     RattlerLockV6Loader,
 )
 
@@ -14,4 +13,3 @@ def test_loaders() -> None:
     assert BaseLoader not in LOADERS
     assert RattlerLockV6Loader in LOADERS
     assert CondaLockV1Loader in LOADERS
-    assert ExplicitLoader in LOADERS
