@@ -11,7 +11,6 @@ from conda_lockfiles.create import create_environment_from_lockfile
 
 from . import (
     CONDA_LOCK_METADATA_DIR,
-    EXPLICIT_LOCK_DIR,
     PIXI_METADATA_DIR,
 )
 
@@ -47,18 +46,3 @@ def test_create_environment_from_lockfile_conda_lock_metadata(tmp_path: Path) ->
     data = json.loads(env_record_path.read_bytes())
     # package/repodata has .<2.0a0
     assert "libzlib >=1.3.1,<2.0a1" in data["depends"]
-
-
-def test_create_environment_from_explicit_file(tmp_path: Path) -> None:
-    create_environment_from_lockfile(
-        EXPLICIT_LOCK_DIR / "explicit.txt",
-        tmp_path,
-        platform="linux-64",
-    )
-    env_record_path = tmp_path / "conda-meta" / "tzdata-2025b-h04d1e81_0.json"
-    assert env_record_path.is_file()
-    data = json.loads(env_record_path.read_bytes())
-    assert (
-        data["sha256"]
-        == "3c9fefdfb2335e8641642e964cfaf20513d40ec709ab559b47b52d99b2e46fea"
-    )

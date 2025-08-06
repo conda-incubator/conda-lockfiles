@@ -7,5 +7,4 @@ if TYPE_CHECKING:
 
 
 CONDA_LOCK_FILE: Final = "conda-lock.yml"
-EXPLICIT_KEY: Final = "@EXPLICIT"
 PIXI_LOCK_FILE: Final = "pixi.lock"
