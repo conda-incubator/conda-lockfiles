@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 yaml = YAML(typ="safe")
 
 
-class PixiLoader(BaseLoader):
+class RattlerLockV6Loader(BaseLoader):
     @classmethod
     def supports(cls, path: PathType) -> bool:
         path = Path(path)

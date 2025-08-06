@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from .base import BaseLoader
 from .conda_lock_v1 import CondaLockV1Loader
-from .pixi import PixiLoader
+from .rattler_lock_v6 import RattlerLockV6Loader
 
 __all__ = [
     "BaseLoader",
     "CondaLockV1Loader",
-    "PixiLoader",
     "LOADERS",
+    "RattlerLockV6Loader",
 ]
 
 LOADERS = (
     CondaLockV1Loader,
-    PixiLoader,
+    RattlerLockV6Loader,
 )
