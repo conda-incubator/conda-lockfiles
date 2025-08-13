@@ -5,16 +5,18 @@ from typing import TYPE_CHECKING
 from . import conda_lock_v1, rattler_lock_v6
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from typing import Final
 
 
 __all__ = [
     "conda_lock_v1",
-    "rattler_lock",
-    "LOCKFILE_FORMATS",
+    "DUMPERS",
+    "rattler_lock_v6",
 ]
 
-LOCKFILE_FORMATS: tuple[ModuleType, ...] = (
-    conda_lock_v1,
-    rattler_lock_v6,
+DUMPERS: Final = frozenset(
+    {
+        conda_lock_v1,
+        rattler_lock_v6,
+    }
 )

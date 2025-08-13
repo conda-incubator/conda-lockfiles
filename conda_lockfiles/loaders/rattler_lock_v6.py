@@ -9,12 +9,12 @@ from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
-from ..constants import PIXI_LOCK_FILE
+from ..dumpers.rattler_lock_v6 import DEFAULT_FILENAMES, FORMAT, PIXI_LOCK_FILE
 from .base import load_yaml
 from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
-    from typing import Any, Final, Literal, TypedDict
+    from typing import Any, ClassVar, Final, Literal, TypedDict
 
     from conda.common.path import PathType
 
@@ -49,7 +49,16 @@ if TYPE_CHECKING:
         ]
 
 
-#: Supported package types
+#: The name of the rattler lock v6 format.
+FORMAT
+
+#: The filename of the rattler lock v6 format.
+PIXI_LOCK_FILE
+
+#: Default filenames for the rattler lock v6 format.
+DEFAULT_FILENAMES
+
+#: Supported package types.
 PACKAGE_TYPES: Final = {"pypi", "conda"}
 
 
@@ -137,14 +146,16 @@ def _rattler_lock_v6_package_to_record_overrides(
 
 
 class RattlerLockV6Loader(EnvironmentSpecBase):
+    detection_supported: ClassVar[bool] = True
+
     def __init__(self, path: PathType):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
         return (
-            self.path.name == PIXI_LOCK_FILE
+            self.path.name in DEFAULT_FILENAMES
             and self.path.exists()
-            and load_yaml(self.path)["version"] == 6
+            and self._data["version"] == 6
         )
 
     @property
@@ -154,3 +165,7 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
     @property
     def env(self) -> Environment:
         return _rattler_lock_v6_to_env(**self._data)
+
+
+#: Alias for the rattler lock v6 environment spec.
+environment_spec: Final = RattlerLockV6Loader

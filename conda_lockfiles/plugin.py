@@ -27,19 +27,19 @@ def conda_subcommands():
 
 @hookimpl
 def conda_environment_specifiers() -> Iterable[CondaEnvironmentSpecifier]:
-    for format in loaders.LOCKFILE_FORMATS:
+    for loader in loaders.LOADERS:
         yield CondaEnvironmentSpecifier(
-            name=format.FORMAT,
-            environment_spec=format,
+            name=loader.FORMAT,
+            environment_spec=loader.environment_spec,
         )
 
 
 @hookimpl
 def conda_environment_exporters() -> Iterable[CondaEnvironmentExporter]:
-    for format in dumpers.LOCKFILE_FORMATS:
+    for dumper in dumpers.DUMPERS:
         yield CondaEnvironmentExporter(
-            name=format.FORMAT,
-            aliases=format.ALIASES,
-            default_filenames=format.DEFAULT_FILENAMES,
-            export=format.export,
+            name=dumper.FORMAT,
+            aliases=dumper.ALIASES,
+            default_filenames=dumper.DEFAULT_FILENAMES,
+            export=dumper.export,
         )

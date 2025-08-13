@@ -9,7 +9,7 @@ from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
-from ..dumpers.conda_lock_v1 import CONDA_LOCK_FILE
+from ..dumpers.conda_lock_v1 import CONDA_LOCK_FILE, DEFAULT_FILENAMES, FORMAT
 from .base import load_yaml
 from .records_from_urls import records_from_conda_urls
 
@@ -47,6 +47,14 @@ if TYPE_CHECKING:
 
     CondaLockV1ManagerType = Literal["conda", "pypi"]
 
+#: The name of the conda-lock v1 format.
+FORMAT
+
+#: The filename of the conda-lock v1 format.
+CONDA_LOCK_FILE
+
+#: Default filenames for the conda-lock v1 format.
+DEFAULT_FILENAMES
 
 #: Mapping of supported package types (as used in the lockfile) to package
 #: managers (as used in the environment)
@@ -132,8 +140,6 @@ def _conda_lock_v1_package_to_record_overrides(
 
 
 class CondaLockV1Loader(EnvironmentSpecBase):
-    format: ClassVar[str] = "conda-lock-v1"
-    extensions: ClassVar[set[str]] = {".yml", ".yaml"}
     detection_supported: ClassVar[bool] = True
 
     def __init__(self, path: PathType):
@@ -141,9 +147,9 @@ class CondaLockV1Loader(EnvironmentSpecBase):
 
     def can_handle(self) -> bool:
         return (
-            self.path.name == CONDA_LOCK_FILE
+            self.path.name in DEFAULT_FILENAMES
             and self.path.exists()
-            and load_yaml(self.path)["version"] == 1
+            and self._data["version"] == 1
         )
 
     @property
@@ -153,3 +159,7 @@ class CondaLockV1Loader(EnvironmentSpecBase):
     @property
     def env(self) -> Environment:
         return _conda_lock_v1_to_env(platform=context.subdir, **self._data)
+
+
+#: Alias for the conda lock v1 environment spec.
+environment_spec: Final = CondaLockV1Loader

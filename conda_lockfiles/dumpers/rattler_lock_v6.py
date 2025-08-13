@@ -19,14 +19,17 @@ if TYPE_CHECKING:
     from conda.models.records import PackageRecord
 
 
-#: The name of the rattler lock format.
-FORMAT: Final = "pixi"
+#: The name of the rattler lock v6 format.
+FORMAT: Final = "rattler-lock-v6"
 
-#: Aliases for the rattler lock format.
-ALIASES: Final = ("rattler-lock",)
+#: Aliases for the rattler lock v6 format.
+ALIASES: Final = ("rattler-lock", "rattler", "pixi-lock", "pixi")
 
-#: Default filenames for the rattler lock format.
-DEFAULT_FILENAMES: Final = ("rattler-lock.yaml", "rattler-lock.yml")
+#: The filename of the rattler lock v6 format.
+PIXI_LOCK_FILE: Final = "pixi.lock"
+
+#: Default filenames for the rattler lock v6 format.
+DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 
 
 def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
