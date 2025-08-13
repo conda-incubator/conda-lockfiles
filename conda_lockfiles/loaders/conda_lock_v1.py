@@ -14,36 +14,38 @@ from .base import load_yaml
 from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
-    from typing import Any, ClassVar, Final, NotRequired, TypedDict
+    from typing import Any, ClassVar, Final, Literal, NotRequired, TypedDict
 
     from conda.common.path import PathType
 
-    class CondaLockV1Hash(TypedDict):
+    class CondaLockV1HashType(TypedDict):
         md5: NotRequired[str]
         sha256: NotRequired[str]
 
-    CondaLockV1Dependencies = dict[str, str]
+    CondaLockV1DependenciesType = dict[str, str]
 
-    class CondaLockV1Package(TypedDict):
+    class CondaLockV1PackageType(TypedDict):
         name: str
         version: str
-        manager: str
+        manager: Literal["conda", "pypi"]
         platform: str
-        dependencies: CondaLockV1Dependencies
+        dependencies: CondaLockV1DependenciesType
         url: str
-        hash: CondaLockV1Hash
+        hash: CondaLockV1HashType
         category: str
         optional: bool
 
-    class CondaLockV1Channel(TypedDict):
+    class CondaLockV1ChannelType(TypedDict):
         url: str
         used_env_vars: list
 
-    class CondaLockV1Metadata(TypedDict):
+    class CondaLockV1MetadataType(TypedDict):
         content_hash: dict[str, str]
-        channels: list[CondaLockV1Channel]
+        channels: list[CondaLockV1ChannelType]
         platforms: list[str]
         sources: list[str]
+
+    CondaLockV1ManagerType = Literal["conda", "pypi"]
 
 
 #: Mapping of supported package types (as used in the lockfile) to package
@@ -59,8 +61,8 @@ def _conda_lock_v1_to_env(
     *,
     # conda-lock.yml fields
     version: int,
-    metadata: CondaLockV1Metadata,
-    package: list[CondaLockV1Package],
+    metadata: CondaLockV1MetadataType,
+    package: list[CondaLockV1PackageType],
     **kwargs,
 ) -> Environment:
     if version != 1:
@@ -110,9 +112,9 @@ def _conda_lock_v1_to_env(
 
 def _conda_lock_v1_package_to_record_overrides(
     *,
-    manager: str,
+    manager: CondaLockV1ManagerType,
     url: str,
-    dependencies: CondaLockV1Dependencies,
+    dependencies: CondaLockV1DependenciesType,
     platform: str,
     **kwargs,
 ) -> dict[str, Any]:
@@ -145,8 +147,9 @@ class CondaLockV1Loader(EnvironmentSpecBase):
         )
 
     @property
+    def _data(self) -> dict[str, Any]:
+        return load_yaml(self.path)
+
+    @property
     def env(self) -> Environment:
-        return _conda_lock_v1_to_env(
-            platform=context.subdir,
-            **load_yaml(self.path),
-        )
+        return _conda_lock_v1_to_env(platform=context.subdir, **self._data)
