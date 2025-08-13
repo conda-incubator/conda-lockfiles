@@ -6,7 +6,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.common.serialize.yaml import yaml_safe_dump
+from conda.common.serialize import yaml_safe_dump
 from conda.core.prefix_data import PrefixData
 from conda.exceptions import CondaValueError
 from conda.models.match_spec import MatchSpec

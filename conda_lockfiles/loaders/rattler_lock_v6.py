@@ -11,7 +11,7 @@ from conda.plugins.types import EnvironmentSpecBase
 
 from ..constants import PIXI_LOCK_FILE
 from .base import load_yaml
-from .records_from_conda_urls import records_from_conda_urls
+from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
     from typing import Any, Final
