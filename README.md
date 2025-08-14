@@ -8,21 +8,21 @@ Support for different lockfiles in the `conda` CLI tool.
 
 ## What is this?
 
-`conda lockfiles` is a prototype replacement subcommand for `conda create --file explicit.txt`,  `conda export`, and `conda list --explicit`. It supports different types of lockfiles in the ecosystem.
+conda-lockfiles adds support for additioanl lockfile formats to conda. It supports different types of lockfiles in the ecosystem.
 
 The basic usage is:
 
 ```bash
 # Create environment from lockfile
-conda lockfiles create -n ENV-NAME PATH-TO.LOCKFILE
+conda env create -n ENV-NAME PATH-TO.LOCKFILE
 # Export current environment to lockfile
-conda lockfiles export -n ENV-NAME --format FORMAT
+conda export -n ENV-NAME --format FORMAT
 ```
 
 Currently supported lockfile formats:
 
 - conda-lock.yml (conda-lock v1)
-- Pixi.lock (rattler_lock v6)
+- pixi.lock (rattler_lock v6)
 
 ## Installation
 
