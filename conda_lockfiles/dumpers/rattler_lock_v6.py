@@ -64,12 +64,12 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
 
 
 def _to_dict(env: Environment) -> dict[str, Any]:
-    packages = sorted(env.explicit_packages, key=lambda package: package.url)
+    packages = sorted(env.explicit_packages, key=lambda package: package.url or "")
     return {
         "version": 6,
         "environments": {
             "default": {
-                "channels": [{"url": str(channel)} for channel in env.config.channels],
+                "channels": [{"url": channel} for channel in env.config.channels],
                 "packages": {
                     context.subdir: [{"conda": package.url} for package in packages]
                 },

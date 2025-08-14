@@ -70,7 +70,7 @@ def _to_dict(env: Environment) -> dict[str, Any]:
             "content_hash": {},
             "channels": [
                 {
-                    "url": getattr(channel, "canonical_name", None),
+                    "url": channel,
                     "used_env_vars": [],
                 }
                 for channel in env.config.channels
