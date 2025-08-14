@@ -43,13 +43,6 @@ CONDA_LOCK_METADATA_MD5 = {
     "win-64": "92b11b0b2120d563caa1629928122cee",
 }
 
-CONDA_LOCK_METADATA_DEPENDENCIES = {
-    "linux-64": ("__glibc >=2.17,<3.0.a0", "libgcc >=13", "libzlib >=1.3.1,<2.0a1"),
-    "osx-64": ("__osx >=10.13", "libzlib >=1.3.1,<2.0a1"),
-    "osx-arm64": ("__osx >=11.0", "libzlib >=1.3.1,<2.0a1"),
-    "win-64": ("ucrt >=10.0.20348.0", "vc >=14.2,<15", "vc14_runtime >=14.29.30139"),
-}
-
 
 def test_create_environment_from_conda_lock_v1(
     plugin_manager: CondaPluginManager,
@@ -80,7 +73,7 @@ def test_create_environment_from_conda_lock_v1(
     assert pkg.build == CONDA_LOCK_METADATA_BUILDS[context.subdir]
     assert pkg.sha256 == CONDA_LOCK_METADATA_SHA256[context.subdir]
     assert pkg.md5 == CONDA_LOCK_METADATA_MD5[context.subdir]
-    assert pkg.depends == CONDA_LOCK_METADATA_DEPENDENCIES[context.subdir]
+    assert pkg.depends == ("ONLY_IN_LOCKFILE 0",)
 
 
 def test_create_environment_from_rattler_lock_v6(
@@ -114,7 +107,6 @@ def test_create_environment_from_rattler_lock_v6(
         pkg.sha256 == "5aaa366385d716557e365f0a4e9c3fca43ba196872abbbe3d56bb610d131e192"
     )
     assert pkg.md5 == "4222072737ccff51314b5ece9c7d6f5a"
-    # TODO
-    # assert pkg.license == "ONLY_IN_LOCKFILE"
+    assert pkg.license == "ONLY_IN_LOCKFILE"
     assert pkg.size == 122968
     assert pkg.timestamp == 1742727099.393

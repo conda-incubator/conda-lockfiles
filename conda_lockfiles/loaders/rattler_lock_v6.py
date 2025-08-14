@@ -98,9 +98,12 @@ def _rattler_lock_v6_to_env(
     external_packages: dict[str, list[str]] = {}
     for pkg in environment["packages"][platform]:
         manager, url = (key := _get_package_key(pkg))
-        if key not in lookup:
+        try:
+            pkg = lookup[key]
+        except KeyError:
             raise ValueError(f"Unknown package: {pkg}")
-        elif manager == "conda":
+
+        if manager == "conda":
             explicit_packages[url] = _rattler_lock_v6_package_to_record_overrides(**pkg)
         else:
             external_packages.setdefault(manager, []).append(url)

@@ -83,11 +83,7 @@ package:
   manager: conda
   platform: linux-64
   dependencies:
-    __glibc: '>=2.17,<3.0.a0'
-    libgcc: '>=13'
-    # Manually modified the next and similar lines in this file from
-    #libzlib: '>=1.3.1,<2.0a0'
-    libzlib: '>=1.3.1,<2.0a1'
+    ONLY_IN_LOCKFILE: '0'
   url: https://conda.anaconda.org/conda-forge/linux-64/libsqlite-3.50.0-hee588c1_0.conda
   hash:
     md5: 71888e92098d0f8c41b09a671ad289bc
@@ -99,8 +95,7 @@ package:
   manager: conda
   platform: osx-64
   dependencies:
-    __osx: '>=10.13'
-    libzlib: '>=1.3.1,<2.0a1'
+    ONLY_IN_LOCKFILE: '0'
   url: https://conda.anaconda.org/conda-forge/osx-64/libsqlite-3.50.0-hdb6dae5_0.conda
   hash:
     md5: caf16742f7e16475603cd9981ef36195
@@ -112,8 +107,7 @@ package:
   manager: conda
   platform: osx-arm64
   dependencies:
-    __osx: '>=11.0'
-    libzlib: '>=1.3.1,<2.0a1'
+    ONLY_IN_LOCKFILE: '0'
   url: https://conda.anaconda.org/conda-forge/osx-arm64/libsqlite-3.50.0-h3f77e49_0.conda
   hash:
     md5: cda0ec640bc4698d0813a8fb459aee58
@@ -125,9 +119,7 @@ package:
   manager: conda
   platform: win-64
   dependencies:
-    ucrt: '>=10.0.20348.0'
-    vc: '>=14.2,<15'
-    vc14_runtime: '>=14.29.30139'
+    ONLY_IN_LOCKFILE: '0'
   url: https://conda.anaconda.org/conda-forge/win-64/libsqlite-3.50.0-h67fdade_0.conda
   hash:
     md5: 92b11b0b2120d563caa1629928122cee
