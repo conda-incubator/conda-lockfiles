@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from ruamel.yaml import YAML
 
-from conda_lockfiles.constants import CONDA_LOCK_FILE
 from conda_lockfiles.dumpers import conda_lock_v1
 
 from .. import SINGLE_PACKAGE_ENV
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def test_export_to_conda_lock_v1(tmp_path: Path) -> None:
-    lockfile_path = tmp_path / CONDA_LOCK_FILE
+    lockfile_path = tmp_path / conda_lock_v1.CONDA_LOCK_FILE
     conda_lock_v1.export_to_conda_lock_v1(str(SINGLE_PACKAGE_ENV), str(lockfile_path))
     assert lockfile_path.exists()
 

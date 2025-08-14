@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from conda_lockfiles.constants import PIXI_LOCK_FILE
-from conda_lockfiles.loaders.rattler_lock_v6 import RattlerLockV6Loader
+from conda_lockfiles.loaders import PIXI_LOCK_FILE, RattlerLockV6Loader
 
 from .. import PIXI_DIR
 
