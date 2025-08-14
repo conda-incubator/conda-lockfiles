@@ -106,6 +106,8 @@ def _rattler_lock_v6_to_env(
             external_packages.setdefault(manager, []).append(url)
 
     return Environment(
+        prefix=context.target_prefix,
+        platform=platform,
         config=config,
         explicit_packages=records_from_conda_urls(explicit_packages),
         external_packages=external_packages,

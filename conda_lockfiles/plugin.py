@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from conda.plugins import CondaEnvironmentExporter, CondaEnvironmentSpecifier, hookimpl
+from conda.plugins import hookimpl
+from conda.plugins.types import CondaEnvironmentExporter, CondaEnvironmentSpecifier
 
 from . import dumpers, loaders
 
