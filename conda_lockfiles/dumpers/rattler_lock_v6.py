@@ -5,6 +5,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
+from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
 from conda.core.prefix_data import PrefixData
 from conda.exceptions import CondaValueError
@@ -33,11 +34,7 @@ DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 
 
 def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
-    if record.url is None:
-        raise EnvironmentExportNotSupported(FORMAT)
-    package = {
-        "conda": str(record.url),
-    }
+    package = {"conda": record.url}
     # add relevent non-empty fields that rattler_lock includes in v6 lockfiles
     # https://github.com/conda/rattler/blob/rattler_lock-v0.23.5/crates/rattler_lock/src/parse/models/v6/conda_package_data.rs#L46
     fields = [
@@ -64,6 +61,13 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
 
 
 def _to_dict(env: Environment) -> dict[str, Any]:
+    missing_urls = [package for package in env.explicit_packages if package.url is None]
+    if missing_urls:
+        raise EnvironmentExportNotSupported(
+            FORMAT,
+            f"The following packages have no URL: {dashlist(missing_urls)}",
+        )
+
     packages = sorted(env.explicit_packages, key=lambda package: package.url or "")
     return {
         "version": 6,

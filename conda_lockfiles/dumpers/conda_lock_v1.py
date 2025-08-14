@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-import datetime
 import sys
 from contextlib import nullcontext
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
+from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
 from conda.core.prefix_data import PrefixData
 from conda.exceptions import CondaValueError
 from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAML, YAMLError
+
+from ..exceptions import EnvironmentExportNotSupported
 
 if TYPE_CHECKING:
     from typing import Any, Final
@@ -63,7 +66,13 @@ def _record_to_dict(
 
 
 def _to_dict(env: Environment) -> dict[str, Any]:
-    timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(TIMESTAMP)
+    missing_urls = [package for package in env.explicit_packages if package.url is None]
+    if missing_urls:
+        raise EnvironmentExportNotSupported(
+            FORMAT,
+            f"The following packages have no URL: {dashlist(missing_urls)}",
+        )
+    timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP)
     return {
         "version": 1,
         "metadata": {
@@ -109,9 +118,7 @@ def export_to_conda_lock_v1(prefix: str, lockfile_path: str | None) -> None:
         "platforms": [context.subdir],
         "sources": [""],
         "time_metadata": {
-            "created_at": datetime.datetime.now(datetime.timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            ),
+            "created_at": datetime.now(timezone.utc).strftime(TIMESTAMP),
         },
         "custom_metadata": {
             "created_by": "conda-lockfiles",
