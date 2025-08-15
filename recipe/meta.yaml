@@ -32,7 +32,6 @@ test:
     - python 3.9
   imports:
     - conda_lockfiles
-    - conda_lockfiles.constants
     - conda_lockfiles.dumpers
     - conda_lockfiles.dumpers.conda_lock_v1
     - conda_lockfiles.dumpers.rattler_lock_v6
