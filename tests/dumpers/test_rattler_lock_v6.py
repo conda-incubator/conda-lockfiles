@@ -4,6 +4,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
+from conda.base.context import context
 
 from conda_lockfiles.dumpers.rattler_lock_v6 import PIXI_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from conda.testing.fixtures import CondaCLIFixture
+    from pytest_mock import MockerFixture
 
 
 @pytest.mark.parametrize(
@@ -28,11 +30,20 @@ if TYPE_CHECKING:
     ],
 )
 def test_export_to_rattler_lock_v6(
+    mocker: MockerFixture,
     tmp_path: Path,
     conda_cli: CondaCLIFixture,
     prefix: Path,
     exception: Exception | None,
 ) -> None:
+    # mock context.channels to only contain conda-forge
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(channels := ("conda-forge",)),
+    )
+    assert context.channels == channels
+
     reference = prefix / PIXI_LOCK_FILE
     lockfile = tmp_path / PIXI_LOCK_FILE
     with pytest.raises(exception) if exception else nullcontext():

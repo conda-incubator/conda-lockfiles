@@ -3,7 +3,6 @@ environments:
   default:
     channels:
       - url: conda-forge
-      - url: defaults
     packages:
       linux-64:
         - conda: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-7_cp313.conda

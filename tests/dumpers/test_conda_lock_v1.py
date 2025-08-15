@@ -5,6 +5,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
+from conda.base.context import context
 
 from conda_lockfiles.dumpers.conda_lock_v1 import CONDA_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from conda.testing.fixtures import CondaCLIFixture
-
+    from pytest_mock import MockerFixture
 
 RE_CREATED_AT = re.compile(r"created_at: .+Z")
 
@@ -36,11 +37,20 @@ def _normalize_lockfile(lockfile: Path) -> str:
     ],
 )
 def test_export_to_conda_lock_v1(
+    mocker: MockerFixture,
     tmp_path: Path,
     conda_cli: CondaCLIFixture,
     prefix: Path,
     exception: Exception | None,
 ) -> None:
+    # mock context.channels to only contain conda-forge
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(channels := ("conda-forge",)),
+    )
+    assert context.channels == channels
+
     reference = prefix / CONDA_LOCK_FILE
     lockfile = tmp_path / CONDA_LOCK_FILE
     with pytest.raises(exception) if exception else nullcontext():
