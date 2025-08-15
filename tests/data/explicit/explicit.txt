@@ -1,6 +1,0 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: osx-arm64
-# created-by: conda 25.5.0
-@EXPLICIT
-https://repo.anaconda.com/pkgs/main/noarch/tzdata-2025b-h04d1e81_0.conda#3c9fefdfb2335e8641642e964cfaf20513d40ec709ab559b47b52d99b2e46fea
