@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
@@ -10,19 +9,17 @@ from conda.base.context import context, reset_context
 from conda_lockfiles.dumpers.conda_lock_v1 import CONDA_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
-from .. import SINGLE_PACKAGE_ENV, SINGLE_PACKAGE_NO_URL_ENV
+from .. import (
+    SINGLE_PACKAGE_ENV,
+    SINGLE_PACKAGE_NO_URL_ENV,
+    normalize_conda_lock_v1,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from conda.testing.fixtures import CondaCLIFixture
     from pytest_mock import MockerFixture
-
-RE_CREATED_AT = re.compile(r"created_at: .+Z")
-
-
-def _normalize_lockfile(lockfile: Path) -> str:
-    return RE_CREATED_AT.sub("created_at: 'TIMESTAMP'", lockfile.read_text())
 
 
 @pytest.mark.parametrize(
@@ -58,7 +55,7 @@ def test_export_to_conda_lock_v1(
         assert not out
         assert not err
         assert rc == 0
-        assert _normalize_lockfile(lockfile) == _normalize_lockfile(reference)
+        assert normalize_conda_lock_v1(lockfile) == normalize_conda_lock_v1(reference)
 
     # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
     reset_context()
