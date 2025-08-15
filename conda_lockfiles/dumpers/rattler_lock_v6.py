@@ -65,7 +65,7 @@ def _to_dict(env: Environment) -> dict[str, Any]:
             f"The following packages have no URL: {dashlist(missing_urls)}",
         )
 
-    packages = sorted(env.explicit_packages, key=lambda package: package.url or "")
+    packages = sorted(env.explicit_packages, key=lambda package: package.url)
     return {
         "version": 6,
         "environments": {
