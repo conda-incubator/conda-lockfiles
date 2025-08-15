@@ -1,39 +1,19 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from pathlib import Path
+from functools import cache
 from typing import TYPE_CHECKING
 
-from conda.base.context import context
+from conda.common.serialize import yaml_safe_load
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Any
 
-    from conda.common.path import PathType
-    from conda.models.records import PackageRecord
 
-
-class BaseLoader(ABC):
-    def __init__(self, path: PathType):
-        self.path = Path(path)
-        self.data = self._load(path)
-
-    @classmethod
-    @abstractmethod
-    def supports(cls, path: PathType) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _load(self, path: PathType) -> dict[str, Any]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def to_conda_and_pypi(
-        self,
-        environment: str | None = None,
-        platform: str = context.subdir,
-    ) -> tuple[tuple[PackageRecord, ...], tuple[str, ...]]:
-        raise NotImplementedError
+@cache
+def load_yaml(path: Path) -> dict[str, Any]:
+    with path.open() as fh:
+        return yaml_safe_load(fh)
 
 
 def build_number_from_build_string(build_string: str) -> int:

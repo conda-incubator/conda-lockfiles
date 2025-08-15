@@ -6,12 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .create import create_environment_from_lockfile
-
 if TYPE_CHECKING:
     from typing import Final
-
-__all__ = ["create_environment_from_lockfile"]
 
 #: Application name.
 APP_NAME: Final = "conda-lockfiles"

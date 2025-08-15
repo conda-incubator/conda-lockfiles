@@ -1,98 +1,172 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
-from conda.base.constants import KNOWN_SUBDIRS
 from conda.base.context import context
-from conda.models.records import PackageRecord
-from ruamel.yaml import YAML
+from conda.common.io import dashlist
+from conda.models.channel import Channel
+from conda.models.environment import Environment, EnvironmentConfig
+from conda.plugins.types import EnvironmentSpecBase
 
-from ..constants import PIXI_LOCK_FILE
-from .base import BaseLoader, build_number_from_build_string
+from ..dumpers.rattler_lock_v6 import DEFAULT_FILENAMES, FORMAT, PIXI_LOCK_FILE
+from .base import load_yaml
+from .records_from_urls import records_from_conda_urls
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, ClassVar, Final, Literal, TypedDict
 
     from conda.common.path import PathType
 
-yaml = YAML(typ="safe")
+    class RattlerLockV6CondaKeyType(TypedDict):
+        conda: str
+
+    class RattlerLockV6PypiKeyType(TypedDict):
+        pypi: str
+
+    class RattlerLockV6OverrideKeysType(TypedDict):
+        sha256: str
+        md5: str
+        license: str
+        size: int
+        timestamp: int
+
+    class RattlerLockV6CondaPackageType(
+        RattlerLockV6CondaKeyType, RattlerLockV6OverrideKeysType
+    ): ...
+
+    class RattlerLockV6PypiPackageType(
+        RattlerLockV6PypiKeyType, RattlerLockV6OverrideKeysType
+    ): ...
+
+    class RattlerLockV6UrlKeyType(TypedDict):
+        url: str
+
+    class RattlerLockV6EnvironmentType(TypedDict):
+        channels: list[RattlerLockV6UrlKeyType]
+        packages: dict[
+            str, list[RattlerLockV6CondaPackageType | RattlerLockV6PypiPackageType]
+        ]
 
 
-class RattlerLockV6Loader(BaseLoader):
-    @classmethod
-    def supports(cls, path: PathType) -> bool:
-        path = Path(path)
-        if path.name != PIXI_LOCK_FILE or not path.exists():
-            return False
-        data = cls._load(path)
-        if data["version"] != 6:
-            return False
-        return True
+#: The name of the rattler lock v6 format.
+FORMAT
 
-    @staticmethod
-    def _load(path: PathType) -> dict[str, Any]:
-        with open(path) as f:
-            return yaml.load(f)
+#: The filename of the rattler lock v6 format.
+PIXI_LOCK_FILE
 
-    def to_conda_and_pypi(
-        self,
-        environment: str = "default",
-        platform: str = context.subdir,
-    ) -> tuple[tuple[PackageRecord, ...], tuple[str, ...]]:
-        env = self.data["environments"].get(environment)
-        if not env:
-            raise ValueError(
-                f"Environment {environment} not found. "
-                f"Available environment names: {sorted(self.data['environments'])}."
-            )
-        packages = env["packages"].get(platform)
-        if not packages:
-            raise ValueError(
-                f"Environment {environment} does not list packages for platform "
-                f"{platform}. Available platforms: {sorted(env['packages'])}."
-            )
+#: Default filenames for the rattler lock v6 format.
+DEFAULT_FILENAMES
 
-        conda, pypi = [], []
-        for package in packages:
-            for package_type, url in package.items():
-                if package_type == "conda":
-                    conda.append(self._package_record_from_conda_url(url))
-                elif package_type == "pypi":
-                    pypi.append(url)
+#: Supported package types.
+PACKAGE_TYPES: Final = {"pypi", "conda"}
 
-        return tuple(conda), tuple(pypi)
 
-    def _package_record_from_conda_url(self, url: str) -> PackageRecord:
-        channel, subdir, filename = url.rsplit("/", 2)
-        assert subdir in KNOWN_SUBDIRS, f"Unknown subdir '{subdir}' in package {url}."
-        if filename.endswith(".tar.bz2"):
-            basename = filename[: -len(".tar.bz2")]
-            ext = ".tar.bz2"
-        elif filename.endswith(".conda"):
-            basename = filename[: -len(".conda")]
-            ext = ".conda"
+def _rattler_lock_v6_to_env(
+    name: str = "default",
+    platform: str = context.subdir,
+    *,
+    # pixi.lock fields
+    version: int,
+    environments: dict[str, RattlerLockV6EnvironmentType],
+    packages: list[RattlerLockV6CondaPackageType | RattlerLockV6PypiPackageType],
+    **kwargs,
+):
+    if version != 6:
+        raise ValueError(f"Unsupported version: {version}")
+    elif kwargs:
+        raise ValueError(f"Unexpected keyword arguments: {dashlist(kwargs)}")
+    elif not (environment := environments.get(name, None)):
+        raise ValueError(
+            f"Environment '{name}' not found. "
+            f"Available environments: {dashlist(sorted(environments))}"
+        )
+    elif platform not in environment["packages"]:
+        raise ValueError(
+            f"Lockfile does not list packages for platform {platform}. "
+            f"Available platforms: {dashlist(sorted(environment['packages']))}."
+        )
+
+    channels = environment["channels"]
+    config = EnvironmentConfig(
+        channels=[Channel.from_url(channel["url"]) for channel in channels],
+    )
+
+    lookup = {_get_package_key(pkg): pkg for pkg in packages}
+
+    explicit_packages: dict[str, RattlerLockV6OverrideKeysType] = {}
+    external_packages: dict[str, list[str]] = {}
+    for pkg in environment["packages"][platform]:
+        manager, url = (key := _get_package_key(pkg))
+        try:
+            pkg = lookup[key]
+        except KeyError:
+            raise ValueError(f"Unknown package: {pkg}")
+
+        if manager == "conda":
+            explicit_packages[url] = _rattler_lock_v6_package_to_record_overrides(**pkg)
         else:
-            basename, ext = os.path.splitext(filename)
-        assert ext.lower() in (
-            ".conda",
-            ".tar.bz2",
-        ), f"Unknown extension '{ext}' in package {url}."
-        name, version, build = basename.rsplit("-", 2)
-        build_number = build_number_from_build_string(build)
-        record_fields = {
-            "name": name,
-            "version": version,
-            "build": build,
-            "build_number": build_number,
-            "subdir": subdir,
-            "channel": channel,
-            "fn": filename,
-        }
-        for record in self.data["packages"]:
-            if record.get("conda", "") == url:
-                record_fields.update(record)
-                record_fields["url"] = record_fields.pop("conda", None)
-                break
-        return PackageRecord(**record_fields)
+            external_packages.setdefault(manager, []).append(url)
+
+    return Environment(
+        prefix=context.target_prefix,
+        platform=platform,
+        config=config,
+        explicit_packages=records_from_conda_urls(explicit_packages),
+        external_packages=external_packages,
+    )
+
+
+@overload
+def _get_package_key(
+    package: RattlerLockV6CondaPackageType,
+) -> tuple[Literal["conda"], str]: ...
+
+
+@overload
+def _get_package_key(
+    package: RattlerLockV6PypiPackageType,
+) -> tuple[Literal["pypi"], str]: ...
+
+
+def _get_package_key(package):
+    managers = PACKAGE_TYPES.intersection(package)
+    if len(managers) > 1:
+        raise ValueError(f"Multiple package types: {dashlist(sorted(managers))}")
+    elif not managers:
+        raise ValueError(f"Unknown package type: {package}")
+    else:
+        manager = managers.pop()
+        return (manager, package[manager])
+
+
+def _rattler_lock_v6_package_to_record_overrides(
+    *,
+    conda: str,
+    **kwargs,
+) -> RattlerLockV6OverrideKeysType:
+    # ignore conda (url)
+    # other fields are passed through
+    return kwargs  # type: ignore
+
+
+class RattlerLockV6Loader(EnvironmentSpecBase):
+    detection_supported: ClassVar[bool] = True
+
+    def __init__(self, path: PathType):
+        self.path = Path(path).resolve()
+
+    def can_handle(self) -> bool:
+        return (
+            self.path.name in DEFAULT_FILENAMES
+            and self.path.exists()
+            and self._data["version"] == 6
+        )
+
+    @property
+    def _data(self) -> dict[str, Any]:
+        return load_yaml(self.path)
+
+    @property
+    def env(self) -> Environment:
+        return _rattler_lock_v6_to_env(**self._data)
