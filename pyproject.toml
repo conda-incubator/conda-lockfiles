@@ -23,7 +23,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-  # "conda >=23.9.0",
+  # "conda >=25.7.0",
 ]
 dynamic = ["version"]
 
@@ -39,7 +39,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
 [tool.pixi.dependencies]
 python = ">=3.9"
-conda = ">=23.9"
+conda = ">=25.7.0"
 "ruamel.yaml" = "*"
 
 [tool.pixi.pypi-dependencies]
