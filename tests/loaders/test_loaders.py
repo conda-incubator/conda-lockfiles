@@ -7,20 +7,9 @@ from conda.base.context import context
 if TYPE_CHECKING:
     from conda.plugins.manager import CondaPluginManager
 
-from conda_lockfiles.loaders import (
-    LOADERS,
-    conda_lock_v1,
-    rattler_lock_v6,
-)
+from conda_lockfiles.loaders import conda_lock_v1, rattler_lock_v6
 
 from .. import CONDA_LOCK_METADATA_DIR, PIXI_METADATA_DIR
-
-
-def test_loaders() -> None:
-    assert len(LOADERS) == 2
-    assert rattler_lock_v6 in LOADERS
-    assert conda_lock_v1 in LOADERS
-
 
 CONDA_LOCK_METADATA_BUILDS = {
     "linux-64": "hee588c1_0",
