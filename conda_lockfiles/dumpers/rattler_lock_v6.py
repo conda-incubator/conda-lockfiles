@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import sys
-from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
-from conda.core.prefix_data import PrefixData
 from conda.exceptions import CondaValueError
-from ruamel.yaml import YAML, YAMLError
+from ruamel.yaml import YAMLError
 
 from ..exceptions import EnvironmentExportNotSupported
 
@@ -92,32 +89,3 @@ def export(env: Environment) -> str:
         raise CondaValueError(
             f"Failed to export environment to rattler lock format: {e}"
         ) from e
-
-
-# deprecated, keep for testing
-def export_to_rattler_lock_v6(prefix: str, lockfile_path: str | None) -> None:
-    prefix_data = PrefixData(prefix)
-    unique_channels = {(record.channel) for record in prefix_data.iter_records()}
-    if None in unique_channels:
-        raise EnvironmentExportNotSupported(FORMAT)
-    channels = sorted([{"url": str(url)} for url in unique_channels])
-    packages = sorted(
-        [_record_to_dict(record) for record in prefix_data.iter_records()],
-        key=lambda x: x["conda"],
-    )
-    env_subdir_pkgs = [{"conda": package["conda"]} for package in packages]
-    environments = {
-        "default": {
-            "channels": channels,
-            "packages": {
-                context.subdir: env_subdir_pkgs,
-            },
-        }
-    }
-    output = {
-        "version": 6,
-        "environments": environments,
-        "packages": packages,
-    }
-    with open(lockfile_path, "w") if lockfile_path else nullcontext(sys.stdout) as fh:
-        YAML().dump(output, stream=fh)

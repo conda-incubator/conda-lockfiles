@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import sys
-from contextlib import nullcontext
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from conda.base.context import context
 from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
-from conda.core.prefix_data import PrefixData
 from conda.exceptions import CondaValueError
 from conda.models.match_spec import MatchSpec
-from ruamel.yaml import YAML, YAMLError
+from ruamel.yaml import YAMLError
 
 from ..exceptions import EnvironmentExportNotSupported
 
@@ -105,29 +101,3 @@ def export(env: Environment) -> str:
         raise CondaValueError(
             f"Failed to export environment to conda-lock v1 format: {e}"
         ) from e
-
-
-# deprecated, keep for testing
-def export_to_conda_lock_v1(prefix: str, lockfile_path: str | None) -> None:
-    prefix_data = PrefixData(prefix)
-    packages = [_record_to_dict(p, context.subdir) for p in prefix_data.iter_records()]
-    channel_urls = {(p.schannel) for p in prefix_data.iter_records()}
-    metadata = {
-        "content_hash": {},
-        "channels": [{"url": url, "used_env_vars": []} for url in channel_urls],
-        "platforms": [context.subdir],
-        "sources": [""],
-        "time_metadata": {
-            "created_at": datetime.now(timezone.utc).strftime(TIMESTAMP),
-        },
-        "custom_metadata": {
-            "created_by": "conda-lockfiles",
-        },
-    }
-    output = {
-        "version": 1,
-        "metadata": metadata,
-        "package": sorted(packages, key=lambda x: x["name"]),
-    }
-    with open(lockfile_path, "w") if lockfile_path else nullcontext(sys.stdout) as fh:
-        YAML().dump(output, stream=fh)

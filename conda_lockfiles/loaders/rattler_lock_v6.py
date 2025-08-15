@@ -170,7 +170,3 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
     @property
     def env(self) -> Environment:
         return _rattler_lock_v6_to_env(**self._data)
-
-
-#: Alias for the rattler lock v6 environment spec.
-environment_spec: Final = RattlerLockV6Loader

@@ -161,7 +161,3 @@ class CondaLockV1Loader(EnvironmentSpecBase):
     @property
     def env(self) -> Environment:
         return _conda_lock_v1_to_env(platform=context.subdir, **self._data)
-
-
-#: Alias for the conda lock v1 environment spec.
-environment_spec: Final = CondaLockV1Loader
