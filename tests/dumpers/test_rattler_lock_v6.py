@@ -4,7 +4,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
-from conda.base.context import context
+from conda.base.context import context, reset_context
 
 from conda_lockfiles.dumpers.rattler_lock_v6 import PIXI_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
@@ -52,3 +52,6 @@ def test_export_to_rattler_lock_v6(
         assert not err
         assert rc == 0
         assert lockfile.read_text() == reference.read_text()
+
+    # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
+    reset_context()

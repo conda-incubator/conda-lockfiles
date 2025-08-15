@@ -5,7 +5,7 @@ from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
-from conda.base.context import context
+from conda.base.context import context, reset_context
 
 from conda_lockfiles.dumpers.conda_lock_v1 import CONDA_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
@@ -59,3 +59,6 @@ def test_export_to_conda_lock_v1(
         assert not err
         assert rc == 0
         assert _normalize_lockfile(lockfile) == _normalize_lockfile(reference)
+
+    # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
+    reset_context()
