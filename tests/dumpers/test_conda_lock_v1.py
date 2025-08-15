@@ -1,58 +1,51 @@
 from __future__ import annotations
 
+import re
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
-from ruamel.yaml import YAML
+import pytest
 
-from conda_lockfiles.dumpers import conda_lock_v1
+from conda_lockfiles.dumpers.conda_lock_v1 import CONDA_LOCK_FILE
+from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
-from .. import SINGLE_PACKAGE_ENV
+from .. import SINGLE_PACKAGE_ENV, SINGLE_PACKAGE_NO_URL_ENV
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from conda.testing.fixtures import CondaCLIFixture
 
-def test_export_to_conda_lock_v1(tmp_path: Path) -> None:
-    lockfile_path = tmp_path / conda_lock_v1.CONDA_LOCK_FILE
-    conda_lock_v1.export_to_conda_lock_v1(str(SINGLE_PACKAGE_ENV), str(lockfile_path))
-    assert lockfile_path.exists()
 
-    data = YAML().load(lockfile_path)
+RE_CREATED_AT = re.compile(r"created_at: .+Z")
 
-    assert data["version"] == 1
 
-    # metadata object
-    assert "metadata" in data
-    metadata = data["metadata"]
-    assert "channels" in metadata
-    assert len(metadata["channels"]) == 1
-    assert "conda-forge" in metadata["channels"][0]["url"]
-    assert "platforms" in metadata
-    # the contents of platforms depends on the test platform
-    assert "time_metadata" in metadata
-    assert "custom_metadata" in metadata
-    assert metadata["custom_metadata"]["created_by"] == "conda-lockfiles"
+def _normalize_lockfile(lockfile: Path) -> str:
+    return RE_CREATED_AT.sub("created_at: 'TIMESTAMP'", lockfile.read_text())
 
-    # package object
-    assert "package" in data
-    package = data["package"]
-    assert len(package) == 1
-    pkg = package[0]
-    assert pkg["name"] == "python_abi"
-    assert pkg["version"] == "3.13"
-    assert pkg["manager"] == "conda"
-    assert "platform" in pkg
-    assert len(pkg["dependencies"]) == 0
-    assert (
-        pkg["url"]
-        == "https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-7_cp313.conda"
-    )
-    assert "hash" in pkg
-    hash_ = pkg["hash"]
-    assert (
-        hash_["sha256"]
-        == "0595134584589064f56e67d3de1d8fcbb673a972946bce25fb593fb092fdcd97"
-    )
-    assert hash_["md5"] == "e84b44e6300f1703cb25d29120c5b1d8"
-    assert pkg["category"] == "main"
-    assert not pkg["optional"]
+
+@pytest.mark.parametrize(
+    "prefix,exception",
+    [
+        pytest.param(SINGLE_PACKAGE_ENV, None, id="single-package"),
+        pytest.param(
+            SINGLE_PACKAGE_NO_URL_ENV,
+            EnvironmentExportNotSupported,
+            id="single-package-no-url",
+        ),
+    ],
+)
+def test_export_to_conda_lock_v1(
+    tmp_path: Path,
+    conda_cli: CondaCLIFixture,
+    prefix: Path,
+    exception: Exception | None,
+) -> None:
+    reference = prefix / CONDA_LOCK_FILE
+    lockfile = tmp_path / CONDA_LOCK_FILE
+    with pytest.raises(exception) if exception else nullcontext():
+        out, err, rc = conda_cli("export", f"--prefix={prefix}", f"--file={lockfile}")
+        assert not out
+        assert not err
+        assert rc == 0
+        assert _normalize_lockfile(lockfile) == _normalize_lockfile(reference)

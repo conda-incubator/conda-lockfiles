@@ -1,0 +1,28 @@
+version: 1
+metadata:
+  content_hash: {}
+  channels:
+    - url: conda-forge
+      used_env_vars: []
+    - url: defaults
+      used_env_vars: []
+  platforms:
+    - linux-64
+  sources:
+    - ''
+  time_metadata:
+    created_at: '2025-08-14T22:47:07Z'
+  custom_metadata:
+    created_by: conda-lockfiles
+package:
+  - name: python_abi
+    version: '3.13'
+    manager: conda
+    platform: linux-64
+    dependencies: {}
+    url: https://conda.anaconda.org/conda-forge/noarch/python_abi-3.13-7_cp313.conda
+    hash:
+      md5: e84b44e6300f1703cb25d29120c5b1d8
+      sha256: 0595134584589064f56e67d3de1d8fcbb673a972946bce25fb593fb092fdcd97
+    category: main
+    optional: false
