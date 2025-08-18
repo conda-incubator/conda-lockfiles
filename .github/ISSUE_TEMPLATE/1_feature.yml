@@ -52,8 +52,7 @@ body:
       options:
         - conda-lock.yml (conda-lock v1)
         - pixi.lock (rattler_lock v6)
-        - Other format
-        - Not applicable
+        - Other format (please specify)
   - type: textarea
     id: format-info
     attributes:
