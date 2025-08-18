@@ -1,0 +1,60 @@
+name: Bug Report
+description: Create a bug report for conda-lockfiles functionality.
+labels:
+  - type::bug
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      description: Please confirm and check all of the following options.
+      options:
+        - label: I added a descriptive title
+          required: true
+        - label: I searched open reports and couldn't find a duplicate
+          required: true
+        - label: I can reproduce this issue consistently
+          required: false
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What should have happened instead? Please provide as many details as possible. The more information provided, the more likely we are able to replicate your problem and offer a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Please provide step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Create environment with `CONDA_ENV_SPEC=conda-lock-v1 conda env create -n test-env path/to/lockfile.yml`
+        2. Try to export with `conda export -n test-env --format conda-lock-v1`
+        3. See error...
+    validations:
+      required: true
+  - type: textarea
+    id: conda-info
+    attributes:
+      label: '`conda info`'
+      description: Please run `conda info` and paste the output here.
+    validations:
+      required: true
+  - type: textarea
+    id: conda-list
+    attributes:
+      label: '`conda list --show-channel-urls`'
+      description: Please run `conda list --show-channel-urls` and paste the output here.
+    validations:
+      required: true
+  - type: textarea
+    id: lockfile
+    attributes:
+      label: Lockfile Information (if applicable)
+      description: If the issue is related to a specific lockfile, please provide relevant details.
+      placeholder: Lockfile format, lockfile contents, etc.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Include any additional information (or screenshots) that you think would be valuable.
