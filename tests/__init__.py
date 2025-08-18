@@ -18,8 +18,12 @@ SINGLE_PACKAGE_ENV = ENVIRONMENTS_DIR / "single_package"
 SINGLE_PACKAGE_NO_URL_ENV = ENVIRONMENTS_DIR / "single_package_no_url"
 
 
-RE_CREATED_AT = re.compile(r"created_at: .+Z")
+RE_CREATED_BY = re.compile(r"created_by: conda-lockfiles .+")
+RE_CREATED_AT = re.compile(r"created_at: .+")
 
 
 def normalize_conda_lock_v1(lockfile: Path) -> str:
-    return RE_CREATED_AT.sub("created_at: 'TIMESTAMP'", lockfile.read_text())
+    text = lockfile.read_text()
+    text = RE_CREATED_BY.sub("created_by: conda-lockfiles VERSION", text)
+    text = RE_CREATED_AT.sub("created_at: TIMESTAMP", text)
+    return text

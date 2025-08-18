@@ -8,6 +8,7 @@ from conda.exceptions import CondaValueError
 from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAMLError
 
+from .. import __version__
 from .validate_urls import validate_urls
 
 if TYPE_CHECKING:
@@ -77,7 +78,7 @@ def _to_dict(env: Environment) -> dict[str, Any]:
             "platforms": [env.platform],
             "sources": [""],
             "time_metadata": {"created_at": timestamp},
-            "custom_metadata": {"created_by": "conda-lockfiles"},
+            "custom_metadata": {"created_by": f"conda-lockfiles {__version__}"},
         },
         "package": [
             _record_to_dict(pkg, env.platform)
