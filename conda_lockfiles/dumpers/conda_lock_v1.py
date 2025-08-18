@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 FORMAT: Final = "conda-lock-v1"
 
 #: Aliases for the conda-lock v1 format.
-ALIASES: Final = ("conda-lock",)
+ALIASES: Final = ()
 
 #: The filename of the conda-lock v1 format.
 CONDA_LOCK_FILE: Final = "conda-lock.yml"

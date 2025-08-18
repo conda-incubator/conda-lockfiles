@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 FORMAT: Final = "rattler-lock-v6"
 
 #: Aliases for the rattler lock v6 format.
-ALIASES: Final = ("rattler-lock", "rattler", "pixi-lock", "pixi")
+ALIASES: Final = ("pixi-lock-v6",)
 
 #: The filename of the rattler lock v6 format.
 PIXI_LOCK_FILE: Final = "pixi.lock"
