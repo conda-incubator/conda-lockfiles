@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
 
 from conda_lockfiles.dumpers import conda_lock_v1, rattler_lock_v6
 
-from . import normalize_conda_lock_v1
+from . import compare_conda_lock_v1, compare_rattler_lock_v6
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Callable
 
     from conda.testing.fixtures import (
@@ -21,13 +21,17 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    "format,filename,read_lockfile",
+    "format,filename,compare",
     [
-        (rattler_lock_v6.FORMAT, rattler_lock_v6.PIXI_LOCK_FILE, Path.read_text),
+        (
+            rattler_lock_v6.FORMAT,
+            rattler_lock_v6.PIXI_LOCK_FILE,
+            compare_rattler_lock_v6,
+        ),
         (
             conda_lock_v1.FORMAT,
             conda_lock_v1.CONDA_LOCK_FILE,
-            normalize_conda_lock_v1,
+            compare_conda_lock_v1,
         ),
     ],
 )
@@ -38,7 +42,7 @@ def test_export(
     monkeypatch: MonkeyPatch,
     format: str,
     filename: str,
-    read_lockfile: Callable[[Path], str],
+    compare: Callable[[Path, Path], bool],
 ) -> None:
     lockfile = path_factory(filename)
     prefix2 = path_factory()
@@ -74,4 +78,4 @@ def test_export(
         assert not out
         assert not err
         assert rc == 0
-        assert read_lockfile(lockfile) == read_lockfile(lockfile)
+        assert compare(lockfile, lockfile2)

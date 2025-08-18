@@ -9,7 +9,11 @@ from conda.base.context import context, reset_context
 from conda_lockfiles.dumpers.rattler_lock_v6 import PIXI_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
-from .. import SINGLE_PACKAGE_ENV, SINGLE_PACKAGE_NO_URL_ENV
+from .. import (
+    SINGLE_PACKAGE_ENV,
+    SINGLE_PACKAGE_NO_URL_ENV,
+    compare_rattler_lock_v6,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -51,7 +55,7 @@ def test_export_to_rattler_lock_v6(
         assert not out
         assert not err
         assert rc == 0
-        assert lockfile.read_text() == reference.read_text()
+        assert compare_rattler_lock_v6(lockfile, reference)
 
     # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
     reset_context()

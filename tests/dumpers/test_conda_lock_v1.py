@@ -12,7 +12,7 @@ from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 from .. import (
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
-    normalize_conda_lock_v1,
+    compare_conda_lock_v1,
 )
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ def test_export_to_conda_lock_v1(
         assert not out
         assert not err
         assert rc == 0
-        assert normalize_conda_lock_v1(lockfile) == normalize_conda_lock_v1(reference)
+        assert compare_conda_lock_v1(lockfile, reference)
 
     # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
     reset_context()
