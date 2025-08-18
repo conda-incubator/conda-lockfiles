@@ -87,6 +87,7 @@ body:
           - name: numpy
             version: 1.24.0
         ```
+      render: shell
   - type: textarea
     id: use-case
     attributes:
@@ -103,4 +104,4 @@ body:
     id: context
     attributes:
       label: Additional Context
-      description: Include any additional information that you think would be valuable.
+      description: Include any additional information (or screenshots) that you think would be valuable.

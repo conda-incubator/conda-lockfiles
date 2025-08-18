@@ -38,6 +38,7 @@ body:
     attributes:
       label: '`conda info`'
       description: Please run `conda info` and paste the output here.
+      render: shell
     validations:
       required: true
   - type: textarea
@@ -45,12 +46,13 @@ body:
     attributes:
       label: '`conda list --show-channel-urls`'
       description: Please run `conda list --show-channel-urls` and paste the output here.
+      render: shell
     validations:
       required: true
   - type: textarea
     id: lockfile
     attributes:
-      label: Lockfile Information (if applicable)
+      label: Lockfile Information
       description: If the issue is related to a specific lockfile, please provide relevant details.
       placeholder: Lockfile format, lockfile contents, etc.
   - type: textarea
