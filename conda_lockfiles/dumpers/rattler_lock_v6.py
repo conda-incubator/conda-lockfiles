@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
 from conda.exceptions import CondaValueError
 from ruamel.yaml import YAMLError
 
-from ..exceptions import EnvironmentExportNotSupported
+from .validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from typing import Any, Final
@@ -58,13 +57,7 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
 
 
 def _to_dict(env: Environment) -> dict[str, Any]:
-    missing_urls = [package for package in env.explicit_packages if package.url is None]
-    if missing_urls:
-        raise EnvironmentExportNotSupported(
-            FORMAT,
-            f"The following packages have no URL: {dashlist(missing_urls)}",
-        )
-
+    validate_urls(env, FORMAT)
     packages = sorted(env.explicit_packages, key=lambda package: package.url)
     return {
         "version": 6,
