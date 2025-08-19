@@ -29,12 +29,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["39", "310", "311", "312"]
+        python-version: ["39", "310", "311", "312", "313]
         include:
           - os: macos-13
             python-version: "39"
           - os: macos-14
-            python-version: "312"
+            python-version: "313"
     env:
       PIXI_ENV_NAME: test-py${{ matrix.python-version }}
     steps:
