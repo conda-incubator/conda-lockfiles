@@ -9,7 +9,7 @@ from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
-from ...load_yml import load_yaml
+from ...load_yaml import load_yaml
 from ...records_from_conda_urls import records_from_conda_urls
 from .dumper import CONDA_LOCK_FILE, DEFAULT_FILENAMES, FORMAT
 
