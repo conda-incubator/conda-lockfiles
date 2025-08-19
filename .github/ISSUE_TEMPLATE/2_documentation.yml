@@ -1,0 +1,56 @@
+name: Documentation
+description: Create a documentation related issue for conda-lockfiles.
+labels:
+  - type::documentation
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      description: Please confirm and check all of the following options.
+      options:
+        - label: I added a descriptive title
+          required: true
+        - label: I searched open reports and couldn't find a duplicate
+          required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What documentation issue did you find?
+      description: Mention here any typos, broken links, or missing, incomplete, or outdated information, etc. that you have noticed in the conda-lockfiles documentation or CLI help.
+    validations:
+      required: true
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Type of documentation issue
+      description: What type of documentation issue is this?
+      options:
+        - Typo or grammatical error
+        - Missing information
+        - Outdated information
+        - Broken link
+        - Unclear or confusing explanation
+        - Missing examples
+        - CLI help text issue
+        - Other
+  - type: textarea
+    id: location
+    attributes:
+      label: Where is this issue located?
+      description: Please provide the specific location of the documentation issue (URL, file path, section name, etc.).
+      placeholder: |
+        - URL: https://conda-incubator.github.io/conda-lockfiles/...
+        - File: README.md, docs/installation.md, etc.
+        - CLI command: conda lockfiles --help
+        - Section: Installation, Usage, etc.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: If you have a suggestion for how to fix or improve the documentation, please share it here.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Include any additional information (or screenshots) that you think would be valuable.
