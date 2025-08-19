@@ -9,9 +9,9 @@ from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
-from ..dumpers.conda_lock_v1 import CONDA_LOCK_FILE, DEFAULT_FILENAMES, FORMAT
-from .base import load_yaml
-from .records_from_urls import records_from_conda_urls
+from ...load_yml import load_yaml
+from ...records_from_conda_urls import records_from_conda_urls
+from .dumper import CONDA_LOCK_FILE, DEFAULT_FILENAMES, FORMAT
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Final, Literal, NotRequired, TypedDict
