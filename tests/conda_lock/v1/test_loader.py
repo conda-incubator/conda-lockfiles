@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from conda_lockfiles.loaders.conda_lock_v1 import CONDA_LOCK_FILE, CondaLockV1Loader
+from conda_lockfiles.conda_lock.v1.loader import CONDA_LOCK_FILE, CondaLockV1Loader
 
-from .. import CONDA_LOCK_METADATA_DIR
+from ... import CONDA_LOCK_METADATA_DIR
 
 if TYPE_CHECKING:
     from pathlib import Path

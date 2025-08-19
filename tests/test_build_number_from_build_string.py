@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from conda_lockfiles.loaders.base import build_number_from_build_string
+from conda_lockfiles.build_number_from_build_string import (
+    build_number_from_build_string,
+)
 
 
 @pytest.mark.parametrize(

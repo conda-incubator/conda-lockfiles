@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 import pytest
 from conda.base.context import context, reset_context
 
-from conda_lockfiles.dumpers.rattler_lock_v6 import PIXI_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
+from conda_lockfiles.rattler_lock.v6.dumper import PIXI_LOCK_FILE
 
-from .. import (
+from ... import (
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
     compare_rattler_lock_v6,
