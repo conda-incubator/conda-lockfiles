@@ -1,5 +1,7 @@
 """ """
 
+from __future__ import annotations
+
 from conda.exceptions import CondaError
 
 
@@ -16,9 +18,10 @@ class ExportLockfileFormatNotSupported(CondaError):
 
 
 class EnvironmentExportNotSupported(CondaError):
-    def __init__(self, lockfile_format: str):
+    def __init__(self, lockfile_format: str, addendum: str | None = None):
         message = (
             "The specified environment cannot be exporting "
-            f"to lockfile format {lockfile_format}"
+            f"to lockfile format {lockfile_format}."
         )
-        super().__init__(message)
+        addendum = f" {addendum.strip()}" if addendum else ""
+        super().__init__(message + addendum)

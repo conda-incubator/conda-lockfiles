@@ -10,14 +10,16 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def test_conda_lock_v1_loader_supports(tmp_path: Path) -> None:
-    assert CondaLockV1Loader.supports(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE)
-    assert not CondaLockV1Loader.supports(CONDA_LOCK_METADATA_DIR / "environment.yaml")
-    assert not CondaLockV1Loader.supports(tmp_path / CONDA_LOCK_FILE)
-    assert not CondaLockV1Loader.supports(tmp_path / "environment.yaml")
+def test_can_handle(tmp_path: Path) -> None:
+    assert CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE).can_handle()
+    assert not CondaLockV1Loader(
+        CONDA_LOCK_METADATA_DIR / "environment.yaml"
+    ).can_handle()
+    assert not CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
+    assert not CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
 
 
-def test_conda_lock_v1_loader_load() -> None:
+def test_data() -> None:
     loader = CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE)
-    assert loader.data["version"] == 1
-    assert len(loader.data["package"]) == 14
+    assert loader._data["version"] == 1
+    assert len(loader._data["package"]) == 14
