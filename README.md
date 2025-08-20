@@ -14,7 +14,7 @@ The basic usage is:
 
 ```bash
 # Create environment from lockfile
-CONDA_ENV_SPEC=FORMAT conda env create -n ENV-NAME --file=/path/to/lockfile
+conda env create -n ENV-NAME --env-spec=FORMAT --file=/path/to/lockfile
 # Export current environment to lockfile
 conda export -n ENV-NAME --format=FORMAT --file=/path/to/lockfile
 ```
