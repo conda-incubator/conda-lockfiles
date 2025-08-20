@@ -18,7 +18,6 @@ if TYPE_CHECKING:
         PathFactoryFixture,
         TmpEnvFixture,
     )
-    from pytest import MonkeyPatch
 
 
 @pytest.mark.parametrize(
@@ -40,7 +39,6 @@ def test_export(
     path_factory: PathFactoryFixture,
     tmp_env: TmpEnvFixture,
     conda_cli: CondaCLIFixture,
-    monkeypatch: MonkeyPatch,
     format: str,
     filename: str,
     compare: Callable[[Path, Path], bool],
@@ -61,11 +59,11 @@ def test_export(
         assert rc == 0
 
         # create a new environment from the lockfile
-        monkeypatch.setenv("CONDA_ENV_SPEC", format)
         conda_cli(
             "env",
             "create",
             f"--prefix={prefix2}",
+            f"--env-spec={format}",
             f"--file={lockfile}",
         )
 
