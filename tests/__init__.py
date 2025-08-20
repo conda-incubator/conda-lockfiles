@@ -9,7 +9,7 @@ from conda.common.serialize import yaml_safe_load
 if TYPE_CHECKING:
     from typing import Any, TypedDict
 
-    from conda_lockfiles.loaders.conda_lock_v1 import (
+    from conda_lockfiles.conda_lock.v1 import (
         CondaLockV1MetadataType,
         CondaLockV1PackageType,
     )

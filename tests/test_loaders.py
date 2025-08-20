@@ -7,8 +7,8 @@ from conda.base.context import context
 if TYPE_CHECKING:
     from conda.plugins.manager import CondaPluginManager
 
-from conda_lockfiles.conda_lock.v1 import loader as conda_lock_v1
-from conda_lockfiles.rattler_lock.v6 import loader as rattler_lock_v6
+from conda_lockfiles.conda_lock import v1 as conda_lock_v1
+from conda_lockfiles.rattler_lock import v6 as rattler_lock_v6
 
 from . import CONDA_LOCK_METADATA_DIR, PIXI_METADATA_DIR
 
