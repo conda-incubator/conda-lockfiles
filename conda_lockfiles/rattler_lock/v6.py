@@ -5,18 +5,22 @@ from typing import TYPE_CHECKING, overload
 
 from conda.base.context import context
 from conda.common.io import dashlist
+from conda.common.serialize import yaml_safe_dump
+from conda.exceptions import CondaValueError
 from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
+from ruamel.yaml import YAMLError
 
-from ...load_yaml import load_yaml
-from ...records_from_conda_urls import records_from_conda_urls
-from .dumper import DEFAULT_FILENAMES, FORMAT, PIXI_LOCK_FILE
+from ..load_yaml import load_yaml
+from ..records_from_conda_urls import records_from_conda_urls
+from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Final, Literal, TypedDict
 
     from conda.common.path import PathType
+    from conda.models.records import PackageRecord
 
     class RattlerLockV6CondaKeyType(TypedDict):
         conda: str
@@ -50,16 +54,74 @@ if TYPE_CHECKING:
 
 
 #: The name of the rattler lock v6 format.
-FORMAT
+FORMAT: Final = "rattler-lock-v6"
+
+#: Aliases for the rattler lock v6 format.
+ALIASES: Final = ("pixi-lock-v6",)
 
 #: The filename of the rattler lock v6 format.
-PIXI_LOCK_FILE
+PIXI_LOCK_FILE: Final = "pixi.lock"
 
 #: Default filenames for the rattler lock v6 format.
-DEFAULT_FILENAMES
+DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 
 #: Supported package types.
 PACKAGE_TYPES: Final = {"pypi", "conda"}
+
+
+def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
+    package = {"conda": record.url}
+    # add relevent non-empty fields that rattler_lock includes in v6 lockfiles
+    # https://github.com/conda/rattler/blob/rattler_lock-v0.23.5/crates/rattler_lock/src/parse/models/v6/conda_package_data.rs#L46
+    fields = [
+        # channel, subdir, name, build and version can be determined from the URL
+        "sha256",
+        "md5",
+        "depends",
+        "constrains",
+        "features",
+        "track_features",
+        "license",
+        "license_family",
+        "size",
+        # libmamba-conda-solver does not record the repodata timestamp,
+        # do not include this field, see:
+        # https://github.com/conda/conda-libmamba-solver/issues/673
+        # "timestamp",
+        "python_site_packages_path",
+    ]
+    for field in fields:
+        if data := record.get(field, None):
+            package[field] = data
+    return package
+
+
+def _to_dict(env: Environment) -> dict[str, Any]:
+    validate_urls(env, FORMAT)
+    packages = sorted(env.explicit_packages, key=lambda package: package.url)
+    return {
+        "version": 6,
+        "environments": {
+            "default": {
+                "channels": [{"url": channel} for channel in env.config.channels],
+                "packages": {
+                    context.subdir: [{"conda": package.url} for package in packages]
+                },
+            },
+        },
+        "packages": [_record_to_dict(package) for package in packages],
+    }
+
+
+def export(env: Environment) -> str:
+    """Export Environment to rattler lock format."""
+    env_dict = _to_dict(env)
+    try:
+        return yaml_safe_dump(env_dict)
+    except YAMLError as e:
+        raise CondaValueError(
+            f"Failed to export environment to rattler lock format: {e}"
+        ) from e
 
 
 def _rattler_lock_v6_to_env(
