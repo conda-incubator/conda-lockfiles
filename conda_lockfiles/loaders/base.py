@@ -14,17 +14,3 @@ if TYPE_CHECKING:
 def load_yaml(path: Path) -> dict[str, Any]:
     with path.open() as fh:
         return yaml_safe_load(fh)
-
-
-def build_number_from_build_string(build_string: str) -> int:
-    "Assume build number is underscore-separated, all-digit substring in build_string"
-    return int(
-        next(
-            (
-                part
-                for part in build_string.split("_")
-                if all(digit.isdigit() for digit in part)
-            ),
-            0,
-        )
-    )
