@@ -9,9 +9,9 @@ from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 
-from ..dumpers.rattler_lock_v6 import DEFAULT_FILENAMES, FORMAT, PIXI_LOCK_FILE
-from .base import load_yaml
-from .records_from_urls import records_from_conda_urls
+from ...load_yaml import load_yaml
+from ...records_from_conda_urls import records_from_conda_urls
+from .dumper import DEFAULT_FILENAMES, FORMAT, PIXI_LOCK_FILE
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Final, Literal, TypedDict

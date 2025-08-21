@@ -6,14 +6,10 @@ from typing import TYPE_CHECKING
 import pytest
 from conda.base.context import context, reset_context
 
-from conda_lockfiles.dumpers.conda_lock_v1 import CONDA_LOCK_FILE
+from conda_lockfiles.conda_lock.v1.dumper import CONDA_LOCK_FILE
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 
-from .. import (
-    SINGLE_PACKAGE_ENV,
-    SINGLE_PACKAGE_NO_URL_ENV,
-    compare_conda_lock_v1,
-)
+from ... import SINGLE_PACKAGE_ENV, SINGLE_PACKAGE_NO_URL_ENV, compare_conda_lock_v1
 
 if TYPE_CHECKING:
     from pathlib import Path

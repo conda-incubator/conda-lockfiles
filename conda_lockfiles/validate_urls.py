@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from conda.common.io import dashlist
 
-from ..exceptions import EnvironmentExportNotSupported
+from .exceptions import EnvironmentExportNotSupported
 
 if TYPE_CHECKING:
     from conda.models.environment import Environment

@@ -7,7 +7,7 @@ from conda.common.serialize import yaml_safe_dump
 from conda.exceptions import CondaValueError
 from ruamel.yaml import YAMLError
 
-from .validate_urls import validate_urls
+from ...validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from typing import Any, Final

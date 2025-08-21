@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from conda_lockfiles.dumpers import conda_lock_v1, rattler_lock_v6
+from conda_lockfiles.conda_lock.v1 import dumper as conda_lock_v1
+from conda_lockfiles.rattler_lock.v6 import dumper as rattler_lock_v6
 
 from . import compare_conda_lock_v1, compare_rattler_lock_v6
 

@@ -8,8 +8,8 @@ from conda.exceptions import CondaValueError
 from conda.models.match_spec import MatchSpec
 from ruamel.yaml import YAMLError
 
-from .. import __version__
-from .validate_urls import validate_urls
+from ... import __version__
+from ...validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from typing import Any, Final
