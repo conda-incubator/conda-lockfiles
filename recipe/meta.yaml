@@ -32,12 +32,10 @@ test:
     - python 3.9
   imports:
     - conda_lockfiles
-    - conda_lockfiles.conda_lock.v1.dumper
-    - conda_lockfiles.conda_lock.v1.loader
+    - conda_lockfiles.conda_lock.v1
     - conda_lockfiles.exceptions
     - conda_lockfiles.plugin
-    - conda_lockfiles.rattler_lock.v6.dumper
-    - conda_lockfiles.rattler_lock.v6.loader
+    - conda_lockfiles.rattler_lock.v6
 
 about:
   home: https://github.com/conda-incubator/conda-lockfiles

@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING
 import pytest
 from conda.base.context import context, reset_context
 
+from conda_lockfiles.conda_lock.v1 import CONDA_LOCK_FILE, CondaLockV1Loader
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
-from conda_lockfiles.rattler_lock.v6.dumper import PIXI_LOCK_FILE
 
-from ... import (
+from .. import (
+    CONDA_LOCK_METADATA_DIR,
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
-    compare_rattler_lock_v6,
+    compare_conda_lock_v1,
 )
 
 if TYPE_CHECKING:
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
         ),
     ],
 )
-def test_export_to_rattler_lock_v6(
+def test_export_to_conda_lock_v1(
     mocker: MockerFixture,
     tmp_path: Path,
     conda_cli: CondaCLIFixture,
@@ -48,14 +49,29 @@ def test_export_to_rattler_lock_v6(
     )
     assert context.channels == channels
 
-    reference = prefix / PIXI_LOCK_FILE
-    lockfile = tmp_path / PIXI_LOCK_FILE
+    reference = prefix / CONDA_LOCK_FILE
+    lockfile = tmp_path / CONDA_LOCK_FILE
     with pytest.raises(exception) if exception else nullcontext():
         out, err, rc = conda_cli("export", f"--prefix={prefix}", f"--file={lockfile}")
         assert not out
         assert not err
         assert rc == 0
-        assert compare_rattler_lock_v6(lockfile, reference)
+        assert compare_conda_lock_v1(lockfile, reference)
 
     # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
     reset_context()
+
+
+def test_can_handle(tmp_path: Path) -> None:
+    assert CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE).can_handle()
+    assert not CondaLockV1Loader(
+        CONDA_LOCK_METADATA_DIR / "environment.yaml"
+    ).can_handle()
+    assert not CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
+    assert not CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
+
+
+def test_data() -> None:
+    loader = CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE)
+    assert loader._data["version"] == 1
+    assert len(loader._data["package"]) == 14

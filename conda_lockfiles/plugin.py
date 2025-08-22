@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 @hookimpl
 def conda_environment_specifiers() -> Iterable[CondaEnvironmentSpecifier]:
-    from .conda_lock.v1 import loader as conda_lock_v1
-    from .rattler_lock.v6 import loader as rattler_lock_v6
+    from .conda_lock import v1 as conda_lock_v1
+    from .rattler_lock import v6 as rattler_lock_v6
 
     yield CondaEnvironmentSpecifier(
         name=conda_lock_v1.FORMAT,
@@ -26,8 +26,8 @@ def conda_environment_specifiers() -> Iterable[CondaEnvironmentSpecifier]:
 
 @hookimpl
 def conda_environment_exporters() -> Iterable[CondaEnvironmentExporter]:
-    from .conda_lock.v1 import dumper as conda_lock_v1
-    from .rattler_lock.v6 import dumper as rattler_lock_v6
+    from .conda_lock import v1 as conda_lock_v1
+    from .rattler_lock import v6 as rattler_lock_v6
 
     yield CondaEnvironmentExporter(
         name=conda_lock_v1.FORMAT,
