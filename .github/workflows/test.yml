@@ -61,11 +61,63 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      # Clean checkout of specific git ref needed for package metadata version
+      # which needs env vars GIT_DESCRIBE_TAG and GIT_BUILD_STR:
+      - name: Checkout Source
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
+          ref: ${{ github.ref }}
+          clean: true
           fetch-depth: 0
-      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+
+      # Explicitly use Python 3.11 since each of the OSes has a different default Python
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          environments: build
-      - name: Build recipe
-        run: pixi run --environment build build
+          python-version: '3.11'
+
+      - name: Detect Label
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+          from os import environ
+          from subprocess import check_output
+
+          # unless otherwise specified, commits are uploaded to the dev label
+          # e.g., `main` branch commits
+          envs = {"ANACONDA_ORG_LABEL": "dev"}
+
+          if "${{ github.ref_name }}".startswith("feature/"):
+              # feature branch commits are uploaded to a custom label
+              envs["ANACONDA_ORG_LABEL"] = "${{ github.ref_name }}"
+          elif re.match(r"\d+(\.\d+)+\.x", "${{ github.ref_name }}"):
+              # release branch commits are added to the rc label
+              # see https://github.com/conda/infrastructure/issues/760
+              _, name = "${{ github.repository }}".split("/")
+              envs["ANACONDA_ORG_LABEL"] = f"rc-{name}-${{ github.ref_name }}"
+
+              # if no releases have occurred on this branch yet then `git describe --tag`
+              # will misleadingly produce a version number relative to the last release
+              # and not relative to the current release branch, if this is the case we need
+              # to override the version with a derivative of the branch name
+
+              # override the version if `git describe --tag` does not start with the branch version
+              last_release = check_output(["git", "describe", "--tag"], text=True).strip()
+              prefix = "${{ github.ref_name }}"[:-1]  # without x suffix
+              if not last_release.startswith(prefix):
+                  envs["VERSION_OVERRIDE"] = f"{prefix}0"
+
+          Path(environ["GITHUB_ENV"]).write_text("\n".join(f"{name}={value}" for name, value in envs.items()))
+
+      - name: Create & Upload
+        uses: conda/actions/canary-release@eb545bb8ab48d499b31c057a6df3cf46753fdbcb # v25.3.1
+        env:
+          # Run conda-build in isolated activation to properly package conda
+          _CONDA_BUILD_ISOLATED_ACTIVATION: 1
+        with:
+          package-name: ${{ github.event.repository.name }}
+          subdir: ${{ matrix.subdir }}
+          anaconda-org-channel: conda-canary
+          anaconda-org-label: ${{ env.ANACONDA_ORG_LABEL }}
+          anaconda-org-token: ${{ secrets.ANACONDA_ORG_CONDA_CANARY_TOKEN }}
