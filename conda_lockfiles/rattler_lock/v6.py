@@ -96,26 +96,42 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
     return package
 
 
-def _to_dict(env: Environment) -> dict[str, Any]:
-    validate_urls(env, FORMAT)
-    packages = sorted(env.explicit_packages, key=lambda package: package.url)
+def _to_dict(*envs: Environment) -> dict[str, Any]:
+    for env in envs:
+        validate_urls(env, FORMAT)
     return {
         "version": 6,
         "environments": {
             "default": {
                 "channels": [{"url": channel} for channel in env.config.channels],
                 "packages": {
-                    context.subdir: [{"conda": package.url} for package in packages]
+                    env.platform: [
+                        {"conda": pkg.url}
+                        for pkg in sorted(
+                            env.explicit_packages, key=lambda pkg: pkg.name
+                        )
+                    ]
+                    for env in sorted(envs, key=lambda env: env.platform)
                 },
             },
         },
-        "packages": [_record_to_dict(package) for package in packages],
+        "packages": [
+            # canonical order: sorted by name then by platform
+            _record_to_dict(pkg)
+            for pkg in sorted(
+                (pkg for env in envs for pkg in env.explicit_packages),
+                key=lambda pkg: (pkg.name, pkg.platform),
+            )
+        ],
     }
 
 
 def export(env: Environment) -> str:
     """Export Environment to rattler lock format."""
-    env_dict = _to_dict(env)
+    env_dict = _to_dict(
+        env,
+        *(env.extrapolate(platform) for platform in context.export_platforms),
+    )
     try:
         return yaml_safe_dump(env_dict)
     except YAMLError as e:

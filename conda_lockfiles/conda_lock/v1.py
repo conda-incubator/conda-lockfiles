@@ -105,8 +105,9 @@ def _record_to_dict(
     }
 
 
-def _to_dict(env: Environment) -> dict[str, Any]:
-    validate_urls(env, FORMAT)
+def _to_dict(*envs: Environment) -> dict[str, Any]:
+    for env in envs:
+        validate_urls(env, FORMAT)
     timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP)
     return {
         "version": 1,
@@ -119,21 +120,28 @@ def _to_dict(env: Environment) -> dict[str, Any]:
                 }
                 for channel in env.config.channels
             ],
-            "platforms": [env.platform],
+            "platforms": sorted(env.platform for env in envs),
             "sources": [""],
             "time_metadata": {"created_at": timestamp},
             "custom_metadata": {"created_by": f"conda-lockfiles {__version__}"},
         },
         "package": [
+            # canonical order: sorted by platform then by name
             _record_to_dict(pkg, env.platform)
-            for pkg in sorted(env.explicit_packages, key=lambda pkg: pkg.name)
+            for pkg in sorted(
+                (pkg for env in envs for pkg in env.explicit_packages),
+                key=lambda pkg: (pkg.platform, pkg.name),
+            )
         ],
     }
 
 
 def export(env: Environment) -> str:
     """Export Environment to conda-lock v1 format."""
-    env_dict = _to_dict(env)
+    env_dict = _to_dict(
+        env,
+        *(env.extrapolate(platform) for platform in context.export_platforms),
+    )
     try:
         return yaml_safe_dump(env_dict)
     except YAMLError as e:
