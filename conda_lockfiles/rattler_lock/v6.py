@@ -117,10 +117,11 @@ def _to_dict(*envs: Environment) -> dict[str, Any]:
         },
         "packages": [
             # canonical order: sorted by name then by platform
+            # url is <channel>/<subdir>/<name>-<version>-<build>.<format>
             _record_to_dict(pkg)
             for pkg in sorted(
                 (pkg for env in envs for pkg in env.explicit_packages),
-                key=lambda pkg: (pkg.name, pkg.platform),
+                key=lambda pkg: (pkg.name, pkg.url),
             )
         ],
     }
