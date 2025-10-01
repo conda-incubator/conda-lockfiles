@@ -17,6 +17,7 @@ from ..records_from_conda_urls import records_from_conda_urls
 from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing import Any, ClassVar, Final, Literal, TypedDict
 
     from conda.common.path import PathType
@@ -96,7 +97,7 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
     return package
 
 
-def _to_dict(*envs: Environment) -> dict[str, Any]:
+def _to_dict(envs: Environment) -> dict[str, Any]:
     for env in envs:
         validate_urls(env, FORMAT)
     return {
@@ -127,12 +128,9 @@ def _to_dict(*envs: Environment) -> dict[str, Any]:
     }
 
 
-def export(env: Environment) -> str:
+def export(envs: Iterable[Environment]) -> str:
     """Export Environment to rattler lock format."""
-    env_dict = _to_dict(
-        env,
-        *(env.extrapolate(platform) for platform in context.export_platforms),
-    )
+    env_dict = _to_dict(envs)
     try:
         return yaml_safe_dump(env_dict)
     except YAMLError as e:
