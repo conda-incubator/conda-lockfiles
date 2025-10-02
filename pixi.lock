@@ -5684,8 +5684,8 @@ packages:
   timestamp: 1745834587643
 - pypi: ./
   name: conda-lockfiles
-  version: 0.1.dev52+g40eedb006
-  sha256: 338b707940d6cce22182d1d065b2b981de1a328d4914a6c0fe42064febe4efb0
+  version: 0.1.dev54+g99b70e726
+  sha256: a30646359b3e635a871da796f3f605c2aaa650044dc76c72201ee830d883dd49
   requires_dist:
   - ruamel-yaml
   requires_python: '>=3.9'
