@@ -54,15 +54,29 @@ jobs:
   build-conda:
     name: Build conda package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        include:
+          - os: ubuntu-latest
+            subdir: linux-64
+          - os: windows-latest
+            subdir: win-64
+          - os: macos-13
+            subdir: osx-64
+          - os: macos-14
+            subdir: osx-arm64
     env:
       PYTHONUNBUFFERED: "1"
+      CONDA_BLD_PATH: ${{ github.workspace }}/pkgs
+      PACKAGE_NAME: conda-lockfiles
+      ANACONDA_ORG_CHANNEL: conda-canary
+      ANACONDA_ORG_LABEL: dev
+      BINSTAR_API_TOKEN: ${{ secrets.ANACONDA_ORG_CONDA_CANARY_TOKEN }}
     steps:
-      # Clean checkout of specific git ref needed for package metadata version
-      # which needs env vars GIT_DESCRIBE_TAG and GIT_BUILD_STR:
       - name: Checkout Source
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -70,54 +84,68 @@ jobs:
           clean: true
           fetch-depth: 0
 
-      # Explicitly use Python 3.11 since each of the OSes has a different default Python
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: '3.11'
+          environments: build
 
-      - name: Detect Label
-        shell: python
+      - name: Fix Ubuntu configuration
+        if: startswith(matrix.os, 'ubuntu-')
+        run:
+          # Remove global pip config that interferes with isolated testing
+          # See: https://github.com/actions/runner-images/blob/6d025759810a/images/ubuntu/scripts/build/install-python.sh#L15-L21
+          sudo rm /etc/pip.conf
+
+      - name: Setup project
         run: |
-          import re
-          from pathlib import Path
-          from os import environ
-          from subprocess import check_output
+          pixi run --environment build dev
 
-          # unless otherwise specified, commits are uploaded to the dev label
-          # e.g., `main` branch commits
-          envs = {"ANACONDA_ORG_LABEL": "dev"}
+      - name: Debug conda environment
+        run: |
+          pixi run --environment build conda info
+          pixi run --environment build conda config --show-sources
+          pixi run --environment build conda list
 
-          if "${{ github.ref_name }}".startswith("feature/"):
-              # feature branch commits are uploaded to a custom label
-              envs["ANACONDA_ORG_LABEL"] = "${{ github.ref_name }}"
-          elif re.match(r"\d+(\.\d+)+\.x", "${{ github.ref_name }}"):
-              # release branch commits are added to the rc label
-              # see https://github.com/conda/infrastructure/issues/760
-              _, name = "${{ github.repository }}".split("/")
-              envs["ANACONDA_ORG_LABEL"] = f"rc-{name}-${{ github.ref_name }}"
+      - name: Clean conda cache
+        run: pixi run --environment build conda clean --all --yes
 
-              # if no releases have occurred on this branch yet then `git describe --tag`
-              # will misleadingly produce a version number relative to the last release
-              # and not relative to the current release branch, if this is the case we need
-              # to override the version with a derivative of the branch name
-
-              # override the version if `git describe --tag` does not start with the branch version
-              last_release = check_output(["git", "describe", "--tag"], text=True).strip()
-              prefix = "${{ github.ref_name }}"[:-1]  # without x suffix
-              if not last_release.startswith(prefix):
-                  envs["VERSION_OVERRIDE"] = f"{prefix}0"
-
-          Path(environ["GITHUB_ENV"]).write_text("\n".join(f"{name}={value}" for name, value in envs.items()))
-
-      - name: Create & Upload
-        uses: conda/actions/canary-release@f05161c6e6e37a49b17c8e0b436197b53830318a # v25.9.2
+      - name: Build recipe
         env:
-          # Run conda-build in isolated activation to properly package conda
-          _CONDA_BUILD_ISOLATED_ACTIVATION: 1
-        with:
-          package-name: ${{ github.event.repository.name }}
-          subdir: ${{ matrix.subdir }}
-          anaconda-org-channel: conda-canary
-          anaconda-org-label: ${{ env.ANACONDA_ORG_LABEL }}
-          anaconda-org-token: ${{ secrets.ANACONDA_ORG_CONDA_CANARY_TOKEN }}
+          _CONDA_BUILD_ISOLATED_ACTIVATION: "1"
+        run: pixi run --environment build build
+
+      - name: Upload to conda-canary
+        # Only publish canary builds after successful pushes to main on the canonical repo
+        if: >-
+          github.event_name == 'push'
+          && !cancelled()
+          && !github.event.repository.fork
+          && github.ref_name == 'main'
+        shell: bash
+        run: |
+          SEARCH_ROOT="$CONDA_BLD_PATH/${{ matrix.subdir }}"
+          if [[ ! -d "$SEARCH_ROOT" ]]; then
+            echo "Expected build output directory $SEARCH_ROOT not found" >&2
+            exit 1
+          fi
+          PACKAGES=(
+            $(
+              find "$SEARCH_ROOT" -type f \
+              \( -name "${PACKAGE_NAME}-*.conda" -o -name "${PACKAGE_NAME}-*.tar.bz2" \) \
+              -print | sort
+            )
+          )
+          if [[ ${#PACKAGES[@]} -eq 0 ]]; then
+            echo "No conda packages found in $SEARCH_ROOT" >&2
+            exit 1
+          fi
+          printf 'Uploading packages to %s/label/%s:\n' "$ANACONDA_ORG_CHANNEL" "$ANACONDA_ORG_LABEL"
+          printf '  %s\n' "${PACKAGES[@]}"
+          pixi run --environment build \
+            anaconda \
+            upload \
+            --force \
+            --register \
+            --no-progress \
+            --user "$ANACONDA_ORG_CHANNEL" \
+            --label "$ANACONDA_ORG_LABEL" \
+            "${PACKAGES[@]}"
