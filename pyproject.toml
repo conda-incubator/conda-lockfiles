@@ -37,18 +37,21 @@ conda-lockfiles = "conda_lockfiles.plugin"
 
 [tool.pixi.project]
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64", "linux-aarch64"]
 
 [tool.pixi.dependencies]
 python = ">=3.9"
-conda = ">=25.7.0"
+conda = ">=25.7"
 "ruamel.yaml" = "*"
 
 [tool.pixi.pypi-dependencies]
 conda-lockfiles = { path  = ".", editable = true }
 
+[tool.pixi.tasks]
+dev = 'python -c "import sys; print(sys.executable)"'
+
 [tool.pixi.feature.build]
-dependencies = { conda-build = "*" }
+dependencies = { anaconda-client = "*", conda-build = "*" }
 tasks = { build = "conda build recipe" }
 
 [tool.pixi.feature.docs.tasks]
