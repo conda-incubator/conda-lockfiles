@@ -95,10 +95,6 @@ jobs:
           # See: https://github.com/actions/runner-images/blob/6d025759810a/images/ubuntu/scripts/build/install-python.sh#L15-L21
           sudo rm /etc/pip.conf
 
-      - name: Setup project
-        run: |
-          pixi run --environment build dev
-
       - name: Debug conda environment
         run: |
           pixi run --environment build conda info

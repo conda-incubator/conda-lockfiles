@@ -47,9 +47,12 @@ conda = ">=25.7.0"
 [tool.pixi.pypi-dependencies]
 conda-lockfiles = { path  = ".", editable = true }
 
+[tool.pixi.tasks]
+dev = 'python -c "import sys; print(sys.executable)"'
+
 [tool.pixi.feature.build]
 dependencies = { anaconda-client = "*", conda-build = "*" }
-tasks = { dev = 'python -c "from sys import executable as e; e()"', build = "conda build recipe" }
+tasks = { build = "conda build recipe" }
 
 [tool.pixi.feature.docs.tasks]
 docs = { cmd = "python -m sphinx.cmd.build -M dirhtml . _build", cwd = "docs" }
