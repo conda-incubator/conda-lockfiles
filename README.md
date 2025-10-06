@@ -9,7 +9,7 @@ Support for different lockfiles in the `conda` CLI tool.
 <!-- start-main-content -->
 ## What is this?
 
-conda-lockfiles adds support for additional lockfile formats to conda. It supports different types of lockfiles 
+conda-lockfiles adds support for additional lockfile formats to conda. It supports different types of lockfiles
 from the ecosystem like [conda-lock](https://github.com/conda/conda-lock) or [pixi](https://github.com/prefix-dev/pixi).
 
 The basic usage is:
