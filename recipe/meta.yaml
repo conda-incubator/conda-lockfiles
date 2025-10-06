@@ -18,18 +18,18 @@ build:
 
 requirements:
   host:
-    - python 3.9
+    - python 3.10
     - pip
     - hatchling >=1.12.2
     - hatch-vcs >=0.2.0
   run:
-    - python >=3.9
-    - conda >=23.9.0
+    - python >=3.10
+    - conda >=25.9.0
     - ruamel.yaml
 
 test:
   requires:
-    - python 3.9
+    - python 3.10
   imports:
     - conda_lockfiles
     - conda_lockfiles.conda_lock.v1
