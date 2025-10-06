@@ -14,7 +14,6 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -22,9 +21,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-  # "conda >=25.7.0",
+  # "conda >=25.9.0",
   "ruamel.yaml",
 ]
 dynamic = ["version"]
@@ -40,8 +39,8 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64", "linux-aarch64"]
 
 [tool.pixi.dependencies]
-python = ">=3.9"
-conda = ">=25.7"
+python = ">=3.10"
+conda = ">=25.9"
 "ruamel.yaml" = "*"
 
 [tool.pixi.pypi-dependencies]
@@ -81,9 +80,6 @@ pytest-mock = "3.12.0.*"
 pre-commit = "*"
 pytest-cov = ">=6.1.1,<7"
 
-[tool.pixi.feature.py39.dependencies]
-python = "3.9.*"
-
 [tool.pixi.feature.py310.dependencies]
 python = "3.10.*"
 
@@ -97,10 +93,9 @@ python = "3.12.*"
 python = "3.13.*"
 
 [tool.pixi.environments]
-dev = ["py39"]
+dev = ["py310"]
 build = ["build"]
 docs = ["docs"]
-test-py39 = ["test", "py39"]
 test-py310 = ["test", "py310"]
 test-py311 = ["test", "py311"]
 test-py312 = ["test", "py312"]
