@@ -170,7 +170,7 @@ def _conda_lock_v1_to_env(
 
     channels = metadata["channels"]
     config = EnvironmentConfig(
-        channels=[Channel.from_url(channel["url"]) for channel in channels],
+        channels=tuple(Channel(channel["url"]).canonical_name for channel in channels),
     )
 
     explicit_packages: dict[str, dict[str, Any]] = {}

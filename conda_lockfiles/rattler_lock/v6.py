@@ -166,7 +166,7 @@ def _rattler_lock_v6_to_env(
 
     channels = environment["channels"]
     config = EnvironmentConfig(
-        channels=[Channel.from_url(channel["url"]) for channel in channels],
+        channels=tuple(Channel(channel["url"]).canonical_name for channel in channels),
     )
 
     lookup = {_get_package_key(pkg): pkg for pkg in packages}
