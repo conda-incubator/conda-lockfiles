@@ -103,15 +103,19 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
 
     seen = set()
     packages: list[RattlerLockV6CondaPackageType] = []
-    grouped_packages: dict[str, list[RattlerLockV6CondaKeyType]] = {}
+    grouped_packages: dict[str, list[RattlerLockV6CondaKeyType]] = {
+        platform: []
+        # platform canonical order: sorted by platform/subdir
+        for platform in sorted(env.platform for env in envs)
+    }
     for pkg, platform in sorted(
-        # canonical order: sorted by name then by platform/subdir
+        # packages canonical order: sorted by name then by platform/subdir
         ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
         key=lambda pkg_platform: (pkg_platform[0].name, pkg_platform[1]),
     ):
         # list every package for every platform
         # (e.g., noarch packages are listed for every platform)
-        grouped_packages.setdefault(platform, []).append({"conda": pkg.url})
+        grouped_packages[platform].append({"conda": pkg.url})
 
         # packages list should only contain each package once
         # (e.g., noarch packages are deduplicated)

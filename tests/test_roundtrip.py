@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context
+from conda.common.compat import on_win
+from conda.exceptions import CondaMultiError
 
 from conda_lockfiles.conda_lock import v1 as conda_lock_v1
 from conda_lockfiles.load_yaml import load_yaml
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
         PathFactoryFixture,
         TmpEnvFixture,
     )
+    from pytest import MonkeyPatch
 
 
 @pytest.mark.parametrize(
@@ -110,6 +113,7 @@ def test_multiplatform_export(
     format: str,
     filename: str,
     get_platforms: Callable[[Path], tuple[str, ...]],
+    monkeypatch: MonkeyPatch,
 ):
     platforms = tuple(sorted({context.subdir, "linux-64", "osx-arm64", "win-64"}))
     lockfile = path_factory(filename)
@@ -130,14 +134,22 @@ def test_multiplatform_export(
 
         for platform in platforms:
             # create a new environment from the lockfile
-            out, err, rc = conda_cli(
-                "env",
-                "create",
-                f"--prefix={path_factory()}",
-                f"--env-spec={format}",
-                f"--file={lockfile}",
-                f"--platform={platform}",
-            )
-            assert out
-            assert not err
-            assert rc == 0
+            try:
+                out, err, rc = conda_cli(
+                    "env",
+                    "create",
+                    f"--prefix={path_factory()}",
+                    f"--env-spec={format}",
+                    f"--file={lockfile}",
+                    f"--platform={platform}",
+                )
+            except CondaMultiError:
+                # on Windows unpacking packages for non-Windows platforms fails but we
+                # ignore this since we only care about the solve/download
+                # TODO: use --dry-run or --download-only instead
+                if not (on_win and platform == context.subdir):
+                    raise
+            else:
+                assert out
+                assert not err
+                assert rc == 0

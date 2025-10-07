@@ -114,7 +114,7 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     packages: list[CondaLockV1PackageType] = [
         _record_to_dict(pkg, platform)
         for pkg, platform in sorted(
-            # canonical order: sorted by platform/subdir then by name
+            # packages canonical order: sorted by platform/subdir then by name
             ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
             key=lambda pkg_platform: (pkg_platform[1], pkg_platform[0].url),
         )
