@@ -17,7 +17,7 @@ with [pixi](https://github.com/prefix-dev/pixi):
 conda env create --name my-env --format pixi-lock-v6  --file pixi.lock
 ```
 
-:::{notice}
+:::{warning}
 This needs to be a version 6 format of the pixi lock file. Earlier versions
 may cause errors.
 :::
