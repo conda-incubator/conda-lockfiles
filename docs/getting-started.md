@@ -46,7 +46,7 @@ conda export --name python-env --format pixi-lock-v6 --platform win-64 > pixi.lo
 ```
 
 :::{warning}
-Currently, it is not possible to create an environment from a lockfile and then export it using a 
+Currently, it is not possible to create an environment from a lockfile and then export it using a
 different platform. For example, an environment created using a lockfile using the `linux-64` platform
 cannot be exported to the `win-64` platform.
 :::
