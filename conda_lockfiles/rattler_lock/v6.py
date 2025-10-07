@@ -128,7 +128,7 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     }
 
 
-def export(envs: Iterable[Environment]) -> str:
+def multiplatform_export(envs: Iterable[Environment]) -> str:
     """Export Environment to rattler lock format."""
     env_dict = _to_dict(envs)
     try:
