@@ -106,7 +106,7 @@ def _record_to_dict(
     }
 
 
-def _to_dict(envs: Environment) -> dict[str, Any]:
+def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     for env in envs:
         validate_urls(env, FORMAT)
     timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP)
