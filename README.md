@@ -24,12 +24,12 @@ conda export -n ENV-NAME --format=FORMAT --file=/path/to/lockfile
 
 Currently supported lockfile formats:
 
-- conda-lock.yml (conda-lock v1)
-- pixi.lock (rattler_lock v6)
+- conda-lock.yml (`conda-lock-v1`)
+- pixi.lock (`rattler-lock-v6` or `pixi-lock-v6`)
 
 ## Installation
 
-This is a `conda` plugin and goes in the `base` environment:
+This is a `conda` plugin and must be installed in the `base` environment:
 
 ```bash
 conda install -n base conda-forge::conda-lockfiles  # Not available yet
