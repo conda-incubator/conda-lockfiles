@@ -70,7 +70,7 @@ DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 PACKAGE_TYPES: Final = {"pypi", "conda"}
 
 
-def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
+def _record_to_dict(record: PackageRecord) -> RattlerLockV6CondaPackageType:
     package = {"conda": record.url}
     # add relevent non-empty fields that rattler_lock includes in v6 lockfiles
     # https://github.com/conda/rattler/blob/rattler_lock-v0.23.5/crates/rattler_lock/src/parse/models/v6/conda_package_data.rs#L46
@@ -100,31 +100,35 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
 def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     for env in envs:
         validate_urls(env, FORMAT)
+
+    seen = set()
+    packages: list[RattlerLockV6CondaPackageType] = []
+    grouped_packages: dict[str, list[RattlerLockV6CondaKeyType]] = {}
+    for pkg, platform in sorted(
+        # canonical order: sorted by name then by platform/subdir
+        ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
+        key=lambda pkg_platform: (pkg_platform[0].name, pkg_platform[1]),
+    ):
+        # list every package for every platform
+        # (e.g., noarch packages are listed for every platform)
+        grouped_packages.setdefault(platform, []).append({"conda": pkg.url})
+
+        # packages list should only contain each package once
+        # (e.g., noarch packages are deduplicated)
+        if pkg.url in seen:
+            continue
+        packages.append(_record_to_dict(pkg))
+        seen.add(pkg.url)
+
     return {
         "version": 6,
         "environments": {
             "default": {
                 "channels": [{"url": channel} for channel in env.config.channels],
-                "packages": {
-                    env.platform: [
-                        {"conda": pkg.url}
-                        for pkg in sorted(
-                            env.explicit_packages, key=lambda pkg: pkg.name
-                        )
-                    ]
-                    for env in sorted(envs, key=lambda env: env.platform)
-                },
+                "packages": grouped_packages,
             },
         },
-        "packages": [
-            # canonical order: sorted by name then by platform/subdir
-            # url is <channel>/<subdir>/<name>-<version>-<build>.<format>
-            _record_to_dict(pkg)
-            for pkg in sorted(
-                (pkg for env in envs for pkg in env.explicit_packages),
-                key=lambda pkg: (pkg.name, pkg.url),
-            )
-        ],
+        "packages": packages,
     }
 
 

@@ -82,13 +82,13 @@ PACKAGE_TYPES: Final = {
 def _record_to_dict(
     record: PackageRecord,
     platform: str,
-) -> dict[str, Any]:
+) -> CondaLockV1PackageType:
     dependencies = {}
     for dep in record.depends:
         ms = MatchSpec(dep)
         version = ms.version.spec_str if ms.version is not None else ""
         dependencies[ms.name] = version
-    _hash = {}
+    _hash: CondaLockV1HashType = {}
     if record.md5:
         _hash["md5"] = record.md5
     if record.sha256:
@@ -109,7 +109,17 @@ def _record_to_dict(
 def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     for env in envs:
         validate_urls(env, FORMAT)
+
     timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP)
+    packages: list[CondaLockV1PackageType] = [
+        _record_to_dict(pkg, platform)
+        for pkg, platform in sorted(
+            # canonical order: sorted by platform/subdir then by name
+            ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
+            key=lambda pkg_platform: (pkg_platform[1], pkg_platform[0].url),
+        )
+    ]
+
     return {
         "version": 1,
         "metadata": {
@@ -126,15 +136,7 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
             "time_metadata": {"created_at": timestamp},
             "custom_metadata": {"created_by": f"conda-lockfiles {__version__}"},
         },
-        "package": [
-            # canonical order: sorted by platform/subdir then by name
-            # url is <channel>/<subdir>/<name>-<version>-<build>.<format>
-            _record_to_dict(pkg, platform)
-            for pkg, platform in sorted(
-                ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
-                key=lambda pkg_platform: pkg_platform[0].url,
-            )
-        ],
+        "package": packages,
     }
 
 
