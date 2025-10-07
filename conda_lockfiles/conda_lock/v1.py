@@ -127,7 +127,7 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
             "custom_metadata": {"created_by": f"conda-lockfiles {__version__}"},
         },
         "package": [
-            # canonical order: sorted by platform then by name
+            # canonical order: sorted by platform/subdir then by name
             # url is <channel>/<subdir>/<name>-<version>-<build>.<format>
             _record_to_dict(pkg, env.platform)
             for pkg in sorted(

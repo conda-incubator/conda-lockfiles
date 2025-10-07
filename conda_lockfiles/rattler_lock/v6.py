@@ -117,7 +117,7 @@ def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
             },
         },
         "packages": [
-            # canonical order: sorted by name then by platform
+            # canonical order: sorted by name then by platform/subdir
             # url is <channel>/<subdir>/<name>-<version>-<build>.<format>
             _record_to_dict(pkg)
             for pkg in sorted(
