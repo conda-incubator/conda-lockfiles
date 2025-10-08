@@ -10,8 +10,8 @@ Please submit bug reports or feature requests [here](https://github.com/conda-in
 :::
 
 ```{include} ../README.md
-:start-after: <!-- start-main-content -->
-:end-before: <!-- end-main-content -->
+:start-after: <!-- docs-index-content-start -->
+:end-before: <!-- docs-index-content-end -->
 ```
 
 ## Learning more

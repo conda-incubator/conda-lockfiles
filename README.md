@@ -6,7 +6,7 @@ Support for different lockfiles in the `conda` CLI tool.
 > This project is still in early stages of development. Don't use it in production (yet).
 > We do welcome feedback on what the expected behaviour should have been if something doesn't work!
 
-<!-- start-main-content -->
+<!-- docs-index-content-start -->
 ## What is this?
 
 conda-lockfiles adds support for additional lockfile formats to conda. It supports different types of lockfiles
@@ -35,7 +35,7 @@ This is a `conda` plugin and must be installed in the `base` environment:
 conda install -n base conda-forge::conda-lockfiles  # Not available yet
 ```
 
-<!-- end-main-content -->
+<!-- docs-index-content-end -->
 
 More information is available on our [documentation](https://conda-incubator.github.io/conda-lockfiles/).
 
