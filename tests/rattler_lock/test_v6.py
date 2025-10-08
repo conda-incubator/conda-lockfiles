@@ -7,6 +7,7 @@ import pytest
 from conda.base.context import context, reset_context
 
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
+from conda_lockfiles.load_yaml import load_yaml
 from conda_lockfiles.rattler_lock.v6 import PIXI_LOCK_FILE, RattlerLockV6Loader
 
 from .. import (
@@ -19,7 +20,7 @@ from .. import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from conda.testing.fixtures import CondaCLIFixture
+    from conda.testing.fixtures import CondaCLIFixture, TmpEnvFixture
     from pytest_mock import MockerFixture
 
 
@@ -73,3 +74,34 @@ def test_data() -> None:
     loader = RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE)
     assert loader._data["version"] == 6
     assert len(loader._data["environments"]["default"]["packages"]["noarch"]) == 2
+
+
+def test_noarch(
+    mocker: MockerFixture,
+    conda_cli: CondaCLIFixture,
+    tmp_env: TmpEnvFixture,
+    tmp_path: Path,
+) -> None:
+    """Test that noarch packages are listed once within lockfile."""
+    platforms = ["linux-64", "osx-arm64"]  # more than one
+    lockfile = tmp_path / PIXI_LOCK_FILE
+    with tmp_env("--override-channels", "--channel=conda-forge", "boltons") as prefix:
+        out, err, rc = conda_cli(
+            "export",
+            f"--prefix={prefix}",
+            f"--file={lockfile}",
+            "--override-platforms",
+            *(f"--platform={platform}" for platform in platforms),
+        )
+        assert "Collecting package metadata" in out
+        assert not err
+        assert rc == 0
+
+        data = load_yaml(lockfile)
+        assert (
+            sum(
+                "conda-forge/noarch/boltons-" in package["conda"]
+                for package in data["packages"]
+            )
+            == 1
+        )

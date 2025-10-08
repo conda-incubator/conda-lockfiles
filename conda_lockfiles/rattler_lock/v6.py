@@ -17,6 +17,7 @@ from ..records_from_conda_urls import records_from_conda_urls
 from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing import Any, ClassVar, Final, Literal, TypedDict
 
     from conda.common.path import PathType
@@ -69,7 +70,7 @@ DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 PACKAGE_TYPES: Final = {"pypi", "conda"}
 
 
-def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
+def _record_to_dict(record: PackageRecord) -> RattlerLockV6CondaPackageType:
     package = {"conda": record.url}
     # add relevent non-empty fields that rattler_lock includes in v6 lockfiles
     # https://github.com/conda/rattler/blob/rattler_lock-v0.23.5/crates/rattler_lock/src/parse/models/v6/conda_package_data.rs#L46
@@ -96,26 +97,46 @@ def _record_to_dict(record: PackageRecord) -> dict[str, Any]:
     return package
 
 
-def _to_dict(env: Environment) -> dict[str, Any]:
-    validate_urls(env, FORMAT)
-    packages = sorted(env.explicit_packages, key=lambda package: package.url)
+def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
+    for env in envs:
+        validate_urls(env, FORMAT)
+
+    seen = set()
+    packages: list[RattlerLockV6CondaPackageType] = []
+    platforms: dict[str, list[RattlerLockV6CondaKeyType]] = {
+        platform: [] for platform in sorted(env.platform for env in envs)
+    }
+    for pkg, platform in sorted(
+        # canonical order: sorted by name then by platform/subdir
+        ((pkg, env.platform) for env in envs for pkg in env.explicit_packages),
+        key=lambda pkg_platform: (pkg_platform[0].name, pkg_platform[1]),
+    ):
+        # list every package for every platform
+        # (e.g., noarch packages are listed for every platform)
+        platforms[platform].append({"conda": pkg.url})
+
+        # packages list should only contain each package once
+        # (e.g., noarch packages are deduplicated)
+        if pkg.url in seen:
+            continue
+        packages.append(_record_to_dict(pkg))
+        seen.add(pkg.url)
+
     return {
         "version": 6,
         "environments": {
             "default": {
                 "channels": [{"url": channel} for channel in env.config.channels],
-                "packages": {
-                    context.subdir: [{"conda": package.url} for package in packages]
-                },
+                "packages": platforms,
             },
         },
-        "packages": [_record_to_dict(package) for package in packages],
+        "packages": packages,
     }
 
 
-def export(env: Environment) -> str:
+def multiplatform_export(envs: Iterable[Environment]) -> str:
     """Export Environment to rattler lock format."""
-    env_dict = _to_dict(env)
+    env_dict = _to_dict(envs)
     try:
         return yaml_safe_dump(env_dict)
     except YAMLError as e:
@@ -151,7 +172,7 @@ def _rattler_lock_v6_to_env(
 
     channels = environment["channels"]
     config = EnvironmentConfig(
-        channels=[Channel.from_url(channel["url"]) for channel in channels],
+        channels=tuple(Channel(channel["url"]).canonical_name for channel in channels),
     )
 
     lookup = {_get_package_key(pkg): pkg for pkg in packages}

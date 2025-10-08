@@ -33,11 +33,11 @@ def conda_environment_exporters() -> Iterable[CondaEnvironmentExporter]:
         name=conda_lock_v1.FORMAT,
         aliases=conda_lock_v1.ALIASES,
         default_filenames=conda_lock_v1.DEFAULT_FILENAMES,
-        export=conda_lock_v1.export,
+        multiplatform_export=conda_lock_v1.multiplatform_export,
     )
     yield CondaEnvironmentExporter(
         name=rattler_lock_v6.FORMAT,
         aliases=rattler_lock_v6.ALIASES,
         default_filenames=rattler_lock_v6.DEFAULT_FILENAMES,
-        export=rattler_lock_v6.export,
+        multiplatform_export=rattler_lock_v6.multiplatform_export,
     )
