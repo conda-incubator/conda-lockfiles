@@ -28,7 +28,7 @@ This example shows how to export environment we created above (`my-env`) as a
 lockfile using the `conda-lock-v1` format:
 
 ```shell
-conda export --name my-env  --env-spec=conda-lock-v1 > conda-lock.yml
+conda export --name my-env --env-spec=conda-lock-v1 --file conda-lock.yml
 ```
 
 ## Using `conda export` to save lockfiles with a different platform
@@ -42,13 +42,13 @@ conda create --name python-env --yes python
 it's possible to export it to a lockfile using the `win-64` platform with the following command:
 
 ```shell
-conda export --name python-env --format pixi-lock-v6 --platform win-64 > pixi.lock
+conda export --name python-env --format pixi-lock-v6 --platform win-64 --file pixi.lock
 ```
 
 :::{warning}
 Currently, it is not possible to create an environment from a lockfile and then export it using a
 different platform. For example, an environment created using a lockfile using the `linux-64` platform
-cannot be exported to the `win-64` platform.
+cannot be subsequently exported to the `win-64` platform.
 :::
 
 ## Tips on usage
