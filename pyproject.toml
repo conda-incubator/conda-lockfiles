@@ -6,9 +6,7 @@ build-backend = "hatchling.build"
 name = "conda-lockfiles"
 description = "Support different lockfiles in conda."
 readme = "README.md"
-authors = [
-  { name = "Jaime Rodríguez-Guerra", email = "jrodriguez@quansight.com" },
-]
+authors = [{name = "Anaconda, Inc."}]
 license = { file = "LICENSE" }
 classifiers = [
   "License :: OSI Approved :: BSD License",
