@@ -37,6 +37,7 @@ jobs:
             python-version: "313"
     env:
       PIXI_ENV_NAME: test-py${{ matrix.python-version }}
+      CONDA_NOTIFY_OUTDATED_CONDA: "false"
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
