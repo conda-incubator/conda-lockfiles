@@ -1,2 +1,5 @@
 # GitHub syntax highlighting
 pixi.lock linguist-language=YAML
+
+# Record git tag for the version when archiving
+.git_archival.txt export-subst
