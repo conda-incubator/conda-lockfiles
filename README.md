@@ -32,7 +32,7 @@ Currently supported lockfile formats:
 This is a `conda` plugin and must be installed in the `base` environment:
 
 ```bash
-conda install -n base conda-forge::conda-lockfiles  # Not available yet
+conda install -n base conda-forge::conda-lockfiles
 ```
 
 <!-- docs-index-content-end -->
