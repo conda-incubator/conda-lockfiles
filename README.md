@@ -49,6 +49,8 @@ To specify additional platforms:
 conda export --format=FORMAT --file=FILE [--override-platforms] --platform=PLATFORM ...
 ```
 
+See [`conda export` docs](https://docs.conda.io/projects/conda/en/stable/commands/export.html) for more details.
+
 ### Creating a new environment from a lockfile
 
 ```bash
@@ -60,6 +62,8 @@ If conda is unable to determine the file format:
 ```bash
 conda env create --file=FILE --env-spec=FORMAT
 ```
+
+See [`conda env create` docs](https://docs.conda.io/projects/conda/en/stable/commands/env/create.html) for more details.
 
 <!-- docs-index-content-end -->
 
