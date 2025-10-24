@@ -35,6 +35,32 @@ This is a `conda` plugin and must be installed in the `base` environment:
 conda install -n base conda-forge::conda-lockfiles
 ```
 
+## Usage
+
+### Creating a lockfile for the current environment
+
+```bash
+conda export --format=FORMAT --file=FILE
+```
+
+To specify additional platforms:
+
+```bash
+conda export --format=FORMAT --file=FILE [--override-platforms] --platform=PLATFORM ...
+```
+
+### Creating a new environment from a lockfile
+
+```bash
+conda env create --file=FILE
+```
+
+If conda is unable to determine the file format:
+
+```bash
+conda env create --file=FILE --env-spec=FORMAT
+```
+
 <!-- docs-index-content-end -->
 
 More information is available on our [documentation](https://conda-incubator.github.io/conda-lockfiles/).
