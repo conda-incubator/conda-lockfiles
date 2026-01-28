@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import warnings
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.models.environment import Environment
 
-from conda_lockfiles.conda_lock.v1 import CONDA_LOCK_FILE, CondaLockV1Loader
+from conda_lockfiles.conda_lock.v1 import (
+    CONDA_LOCK_FILE,
+    PIP_EXPORT_WARNING,
+    CondaLockV1Loader,
+    multiplatform_export,
+)
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 from conda_lockfiles.load_yaml import load_yaml
 
@@ -61,6 +68,20 @@ def test_export_to_conda_lock_v1(
 
     # TODO: conda's context is not reset when EnvironmentExportNotSupported is raised?
     reset_context()
+
+
+def test_export_lockfile_with_pip_deps():
+    """Test exporting conda lockfile with pip deps will produce an error message"""
+    env_with_pip = Environment(
+        platform=context.subdir,
+        prefix="idontexist",
+        external_packages={"pip": ["pypi/pypi::packaging==25.0=pypi_0"]},
+    )
+    with warnings.catch_warnings(record=True) as warning_list:
+        export = multiplatform_export([env_with_pip])
+        warning_messages = [str(w.message) for w in warning_list]
+        assert PIP_EXPORT_WARNING in warning_messages
+        assert export is not None
 
 
 def test_can_handle(tmp_path: Path) -> None:
