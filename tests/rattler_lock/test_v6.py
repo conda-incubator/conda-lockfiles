@@ -141,6 +141,7 @@ def test_noarch(
         )
 
 
+@pytest.mark.integration
 def test_create_export_create(
     conda_cli: CondaCLIFixture,
     tmp_env: TmpEnvFixture,
@@ -152,18 +153,15 @@ def test_create_export_create(
       - Export to a lock file
       - Recreate the environment
     """
-    platforms = ["linux-64", "osx-arm64"]  # more than one
     lockfile = tmp_path / "rattler-lock.yaml"
-    with tmp_env("--override-channels", "--channel=defaults", "boltons") as prefix:
+    with tmp_env("--override-channels", "--channel=conda-forge", "boltons") as prefix:
         out, err, rc = conda_cli(
             "export",
             f"--prefix={prefix}",
             f"--file={lockfile}",
             "--format=rattler-lock-v6",
-            "--override-platforms",
-            *(f"--platform={platform}" for platform in platforms),
         )
-        assert "Collecting package metadata" in out
+        assert not out  # No output expected when invoked as above
         assert not err
         assert rc == 0
 

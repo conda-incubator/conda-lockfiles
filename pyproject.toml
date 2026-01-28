@@ -125,6 +125,9 @@ addopts = [
   "--tb=native",
   "-vv",
 ]
+markers = [
+  "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
 
 [tool.ruff]
 target-version = "py39"
