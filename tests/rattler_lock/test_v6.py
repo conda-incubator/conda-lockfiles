@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.common.serialize import yaml_safe_dump
 
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 from conda_lockfiles.load_yaml import load_yaml
@@ -64,10 +65,44 @@ def test_export_to_rattler_lock_v6(
 
 
 def test_can_handle(tmp_path: Path) -> None:
+    # Original tests - standard filename
     assert RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE).can_handle()
     assert not RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
     assert not RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
     assert not RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
+
+    # New tests for arbitrary filenames with valid extensions
+    valid_content = load_yaml(PIXI_DIR / PIXI_LOCK_FILE)
+
+    # Test various .lock, .yml, .yaml filenames
+    for filename in [
+        "my-project.lock",
+        "environment.lock",
+        "rattler-lock.yaml",
+        "custom.yml",
+        "deps.yaml",
+    ]:
+        test_file = tmp_path / filename
+        with test_file.open("w") as f:
+            yaml_safe_dump(valid_content, f)
+        assert RattlerLockV6Loader(test_file).can_handle(), f"Should handle {filename}"
+
+    # Test invalid extensions - should not handle
+    for filename in ["lockfile.txt", "pixi.toml", "file.json"]:
+        test_file = tmp_path / filename
+        with test_file.open("w") as f:
+            yaml_safe_dump(valid_content, f)
+        assert not RattlerLockV6Loader(test_file).can_handle(), (
+            f"Should NOT handle {filename}"
+        )
+
+    # Test wrong version in valid extension - should not handle
+    wrong_version = valid_content.copy()
+    wrong_version["version"] = 1  # wrong version
+    test_file = tmp_path / "wrong-version.lock"
+    with test_file.open("w") as f:
+        yaml_safe_dump(wrong_version, f)
+    assert not RattlerLockV6Loader(test_file).can_handle()
 
 
 def test_data() -> None:
@@ -77,7 +112,6 @@ def test_data() -> None:
 
 
 def test_noarch(
-    mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
     tmp_env: TmpEnvFixture,
     tmp_path: Path,
@@ -105,3 +139,43 @@ def test_noarch(
             )
             == 1
         )
+
+
+def test_create_export_create(
+    conda_cli: CondaCLIFixture,
+    tmp_env: TmpEnvFixture,
+    tmp_path: Path,
+) -> None:
+    """
+    Ensures that the following works:
+      - Create an environment
+      - Export to a lock file
+      - Recreate the environment
+    """
+    platforms = ["linux-64", "osx-arm64"]  # more than one
+    lockfile = tmp_path / "rattler-lock.yaml"
+    with tmp_env("--override-channels", "--channel=defaults", "boltons") as prefix:
+        out, err, rc = conda_cli(
+            "export",
+            f"--prefix={prefix}",
+            f"--file={lockfile}",
+            "--format=rattler-lock-v6",
+            "--override-platforms",
+            *(f"--platform={platform}" for platform in platforms),
+        )
+        assert "Collecting package metadata" in out
+        assert not err
+        assert rc == 0
+
+        out, err, rc = conda_cli(
+            "env",
+            "create",
+            "--prefix",
+            tmp_path / "recreated-env",
+            "--file",
+            lockfile,
+            "--env-spec",
+            "rattler-lock-v6",
+        )
+        assert not err
+        assert rc == 0

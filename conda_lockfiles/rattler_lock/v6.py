@@ -240,11 +240,23 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
-        return (
-            self.path.name in DEFAULT_FILENAMES
-            and self.path.exists()
-            and self._data["version"] == 6
-        )
+        # Accept standard filename for fast-path detection
+        if self.path.name in DEFAULT_FILENAMES and self.path.exists():
+            return self._data.get("version") == 6
+
+        # Accept any .lock, .yml, or .yaml file - validate with version check
+        if self.path.suffix not in (".lock", ".yml", ".yaml"):
+            return False
+
+        if not self.path.exists():
+            return False
+
+        # Load file and check version to determine if it's rattler-lock-v6
+        try:
+            return self._data.get("version") == 6
+        except Exception:
+            # File exists but couldn't be parsed or no version field
+            return False
 
     @property
     def _data(self) -> dict[str, Any]:
