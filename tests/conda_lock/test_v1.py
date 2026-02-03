@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.common.serialize import yaml_safe_dump
 
 from conda_lockfiles.conda_lock.v1 import CONDA_LOCK_FILE, CondaLockV1Loader
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
@@ -64,12 +65,39 @@ def test_export_to_conda_lock_v1(
 
 
 def test_can_handle(tmp_path: Path) -> None:
+    # Original tests - standard filename
     assert CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE).can_handle()
     assert not CondaLockV1Loader(
         CONDA_LOCK_METADATA_DIR / "environment.yaml"
     ).can_handle()
     assert not CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
     assert not CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
+
+    # New tests for arbitrary .yml and .yaml filenames
+    valid_content = load_yaml(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE)
+
+    for filename in ["my-conda-lock.yaml", "environment.yml", "deps.yaml"]:
+        test_file = tmp_path / filename
+        with test_file.open("w") as f:
+            yaml_safe_dump(valid_content, f)
+        assert CondaLockV1Loader(test_file).can_handle(), f"Should handle {filename}"
+
+    # Test invalid extensions - should not handle
+    for filename in ["lockfile.txt", "environment.json", "pixi.lock"]:
+        test_file = tmp_path / filename
+        with test_file.open("w") as f:
+            yaml_safe_dump(valid_content, f)
+        assert not CondaLockV1Loader(test_file).can_handle(), (
+            f"Should NOT handle {filename}"
+        )
+
+    # Test wrong version - should not handle
+    wrong_version = valid_content.copy()
+    wrong_version["version"] = 6  # wrong version
+    test_file = tmp_path / "wrong-version.yml"
+    with test_file.open("w") as f:
+        yaml_safe_dump(wrong_version, f)
+    assert not CondaLockV1Loader(test_file).can_handle()
 
 
 def test_data() -> None:

@@ -235,11 +235,23 @@ class CondaLockV1Loader(EnvironmentSpecBase):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
-        return (
-            self.path.name in DEFAULT_FILENAMES
-            and self.path.exists()
-            and self._data["version"] == 1
-        )
+        # Accept standard filename for fast-path detection
+        if self.path.name in DEFAULT_FILENAMES and self.path.exists():
+            return self._data.get("version") == 1
+
+        # Accept any .yml or .yaml file - validate with version check
+        if self.path.suffix not in (".yml", ".yaml"):
+            return False
+
+        if not self.path.exists():
+            return False
+
+        # Load file and check version to determine if it's conda-lock-v1
+        try:
+            return self._data.get("version") == 1
+        except Exception:
+            # File exists but couldn't be parsed or no version field
+            return False
 
     @property
     def _data(self) -> dict[str, Any]:
