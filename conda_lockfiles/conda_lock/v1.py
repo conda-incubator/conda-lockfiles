@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -78,6 +79,15 @@ PACKAGE_TYPES: Final = {
     "pip": "pypi",
 }
 
+PIP_EXPORT_WARNING: Final = (
+    "This lockfile does not include the pip-installed packages "
+    "in your environment.\n"
+    "To fully reproduce this environment:\n"
+    "  1. Identify the pip packages in your environment: conda list "
+    "(look for 'pypi' channel)\n"
+    "  2. Install the pip packages manually after applying the lockfile"
+)
+
 
 def _record_to_dict(
     record: PackageRecord,
@@ -108,6 +118,8 @@ def _record_to_dict(
 
 def _to_dict(envs: Iterable[Environment]) -> dict[str, Any]:
     for env in envs:
+        if env.external_packages.get("pip"):
+            warnings.warn(PIP_EXPORT_WARNING)
         validate_urls(env, FORMAT)
 
     timestamp = datetime.now(timezone.utc).strftime(TIMESTAMP)
