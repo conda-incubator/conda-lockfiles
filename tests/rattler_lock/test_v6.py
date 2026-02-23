@@ -67,9 +67,18 @@ def test_export_to_rattler_lock_v6(
 
 def test_can_handle(tmp_path: Path) -> None:
     assert RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE).can_handle()
-    assert not RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
-    assert not RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
-    assert not RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
+
+    # Invalid filename should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
+
+    # Non-existent file should raise ValueError
+    with pytest.raises(ValueError, match="Cannot load file"):
+        RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
+
+    # Both invalid filename and non-existent should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
 
 
 def test_data() -> None:
@@ -110,58 +119,56 @@ def test_noarch(
 
 
 @pytest.mark.parametrize(
-    "lockfile",
+    "lockfile,should_raise",
     [
         pytest.param(
             PIXI_METADATA_DIR / PIXI_LOCK_FILE,
+            False,
             id="valid-lockfile",
         ),
         pytest.param(
             INVALID_LOCKFILES_DIR / "pixi-lock-v6-missing-environments.lock",
+            True,
             id="missing-environments",
         ),
         pytest.param(
             INVALID_LOCKFILES_DIR / "pixi-lock-v6-missing-packages.lock",
+            True,
             id="missing-packages",
         ),
         pytest.param(
             INVALID_LOCKFILES_DIR / "pixi-lock-v6-invalid-environments-type.lock",
+            True,
             id="invalid-environments-type",
         ),
         pytest.param(
             INVALID_LOCKFILES_DIR / "pixi-lock-v6-invalid-platform.lock",
+            True,
             id="invalid-platform",
         ),
     ],
 )
-def test_can_handle_validation(lockfile: Path) -> None:
+def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
     """Test that can_handle properly validates lockfile structure."""
     loader = RattlerLockV6Loader(lockfile)
 
-    # Valid lockfile should return True, invalid ones should return False
-    if lockfile == PIXI_METADATA_DIR / PIXI_LOCK_FILE:
-        assert loader.can_handle()
+    if should_raise:
+        # Invalid lockfiles should raise ValueError
+        with pytest.raises(ValueError):
+            loader.can_handle()
     else:
-        assert not loader.can_handle()
+        # Valid lockfile should return True
+        assert loader.can_handle()
 
 
-def test_can_handle_logs_validation_errors(tmp_path: Path, caplog) -> None:
-    """Test that validation errors are logged at DEBUG level."""
+def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
+    """Test that validation errors raise ValueError with descriptive messages."""
     # Create an invalid lockfile
     invalid_lockfile = tmp_path / PIXI_LOCK_FILE
     invalid_lockfile.write_text("version: 6\npackages: []")
 
     loader = RattlerLockV6Loader(invalid_lockfile)
 
-    # Capture logs at DEBUG level
-    with caplog.at_level("DEBUG"):
-        result = loader.can_handle()
-
-    # Should return False
-    assert not result
-
-    # Should log the validation error (various messages possible)
-    assert any(
-        "has version 6 but" in record.message.lower() for record in caplog.records
-    )
-    assert any(str(invalid_lockfile) in record.message for record in caplog.records)
+    # Should raise ValueError with descriptive message
+    with pytest.raises(ValueError, match="has version 6 but"):
+        loader.can_handle()
