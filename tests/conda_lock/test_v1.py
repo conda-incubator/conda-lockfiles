@@ -19,6 +19,7 @@ from conda_lockfiles.load_yaml import load_yaml
 
 from .. import (
     CONDA_LOCK_METADATA_DIR,
+    INVALID_LOCKFILES_DIR,
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
     compare_conda_lock_v1,
@@ -129,3 +130,61 @@ def test_noarch(
             )
             == platforms
         )
+
+
+@pytest.mark.parametrize(
+    "lockfile",
+    [
+        pytest.param(
+            CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE,
+            id="valid-lockfile",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-missing-metadata.yml",
+            id="missing-metadata",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-missing-package.yml",
+            id="missing-package",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-invalid-metadata-type.yml",
+            id="invalid-metadata-type",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-invalid-platforms.yml",
+            id="invalid-platform",
+        ),
+    ],
+)
+def test_can_handle_validation(lockfile: Path) -> None:
+    """Test that can_handle properly validates lockfile structure."""
+    loader = CondaLockV1Loader(lockfile)
+
+    # Valid lockfile should return True, invalid ones should return False
+    if lockfile == CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE:
+        assert loader.can_handle()
+    else:
+        assert not loader.can_handle()
+
+
+def test_can_handle_logs_validation_errors(tmp_path: Path, caplog) -> None:
+    """Test that validation errors are logged at DEBUG level."""
+    # Create an invalid lockfile
+    invalid_lockfile = tmp_path / CONDA_LOCK_FILE
+    invalid_lockfile.write_text("version: 1\npackage: []")
+
+    loader = CondaLockV1Loader(invalid_lockfile)
+
+    # Capture logs at DEBUG level
+    with caplog.at_level("DEBUG"):
+        result = loader.can_handle()
+
+    # Should return False
+    assert not result
+
+    # Should log the validation error (various messages possible)
+    assert any(
+        "has version 1 but" in record.message.lower() for record in caplog.records
+    )
+    assert any(str(invalid_lockfile) in record.message for record in caplog.records)

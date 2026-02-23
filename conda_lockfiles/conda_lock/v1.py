@@ -9,6 +9,7 @@ from conda.base.context import context
 from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
 from conda.exceptions import CondaValueError
+from conda.gateways.logging import log
 from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.models.match_spec import MatchSpec
@@ -247,11 +248,66 @@ class CondaLockV1Loader(EnvironmentSpecBase):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
-        return (
-            self.path.name in DEFAULT_FILENAMES
-            and self.path.exists()
-            and self._data["version"] == 1
-        )
+        # Fast path: check filename and existence first
+        if self.path.name not in DEFAULT_FILENAMES or not self.path.exists():
+            return False
+
+        # Validate lockfile structure
+        try:
+            data = self._data
+
+            # Check version
+            if data["version"] != 1:
+                log.error("File %s has invalid version (!= 1)", self.path)
+                return False
+
+            # Check required fields exist and have correct types
+            metadata = data["metadata"]
+            if not isinstance(metadata, dict):
+                log.error("File %s has version 1 but metadata is not a dict", self.path)
+                return False
+
+            if "channels" not in metadata or not isinstance(metadata["channels"], list):
+                log.error(
+                    "File %s has version 1 but missing or invalid channels in metadata",
+                    self.path,
+                )
+                return False
+
+            if "platforms" not in metadata or not isinstance(
+                metadata["platforms"], list
+            ):
+                log.error(
+                    "File %s has version 1 but missing or invalid platforms in "
+                    "metadata",
+                    self.path,
+                )
+                return False
+
+            if not metadata["platforms"]:
+                log.error(
+                    "File %s has version 1 but no platforms in metadata", self.path
+                )
+                return False
+
+            # Check package field exists and is a list
+            if "package" not in data or not isinstance(data["package"], list):
+                log.error(
+                    "File %s has version 1 but missing or invalid package list",
+                    self.path,
+                )
+                return False
+
+            return True
+        except (KeyError, TypeError) as e:
+            log.error("File %s has version 1 but failed validation: %s", self.path, e)
+            return False
+        except YAMLError as e:
+            log.error("File %s has YAML parsing error: %s", self.path, e)
+            return False
+        except Exception as e:
+            log.error("Unexpected error validating %s: %s", self.path, e)
+            return False
 
     @property
     def _data(self) -> dict[str, Any]:
