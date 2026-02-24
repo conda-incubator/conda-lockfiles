@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.common.io import dashlist
 from conda.common.serialize import yaml_safe_dump
 from conda.exceptions import CondaValueError
 from conda.models.channel import Channel
@@ -172,15 +171,10 @@ def _conda_lock_v1_to_env(
     package: list[CondaLockV1PackageType],
     **kwargs,
 ) -> Environment:
-    if version != 1:
-        raise ValueError(f"Unsupported version: {version}")
-    elif kwargs:
-        raise ValueError(f"Unexpected keyword arguments: {dashlist(kwargs)}")
-    elif platform not in metadata["platforms"]:
-        raise ValueError(
-            f"Lockfile does not list packages for platform {platform}. "
-            f"Available platforms: {dashlist(sorted(metadata['platforms']))}."
-        )
+    """
+    Converts a conda lock v1 specification to a conda environment.
+    """
+    _validate_v1({"version": version, "platform": platform, "metadata": metadata})
 
     channels = metadata["channels"]
     config = EnvironmentConfig(
@@ -240,6 +234,55 @@ def _conda_lock_v1_package_to_record_overrides(
     }
 
 
+def _validate_v1(data: dict[str, Any], path: Path) -> None:
+    """
+    Validate the conda lock v1 specification.
+
+    :raises ValueError: Raised when validation fails
+    """
+    if path.name not in DEFAULT_FILENAMES:
+        raise ValueError(
+            f"Invalid filename: {path}; please choose one from: {DEFAULT_FILENAMES}"
+        )
+
+    if not path.exists():
+        raise ValueError(f"File does not exist: {path}")
+
+    # Validate lockfile structure
+    try:
+        # Check version
+        if data["version"] != 1:
+            raise ValueError(f"File {path} has invalid version (!= 1)")
+
+        # Check required fields exist and have correct types
+        metadata = data["metadata"]
+        if not isinstance(metadata, dict):
+            raise ValueError(f"File {path} has version 1 but metadata is not a mapping")
+
+        if "channels" not in metadata or not isinstance(metadata["channels"], list):
+            raise ValueError(
+                f"File {path} has version 1 but missing or invalid channels in metadata"
+            )
+
+        if "platforms" not in metadata or not isinstance(metadata["platforms"], list):
+            raise ValueError(
+                f"File {path} has version 1 but missing or invalid platforms in "
+                "metadata"
+            )
+
+        if not metadata["platforms"]:
+            raise ValueError(f"File {path} has version 1 but no platforms in metadata")
+
+        # Check package field exists and is a list
+        if "package" not in data or not isinstance(data["package"], list):
+            raise ValueError(
+                f"File {path} has version 1 but missing or invalid package list"
+            )
+
+    except (KeyError, TypeError) as e:
+        raise ValueError(f"File {path} has version 1 but failed validation: {e}") from e
+
+
 class CondaLockV1Loader(EnvironmentSpecBase):
     detection_supported: ClassVar[bool] = True
 
@@ -247,11 +290,23 @@ class CondaLockV1Loader(EnvironmentSpecBase):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
-        return (
-            self.path.name in DEFAULT_FILENAMES
-            and self.path.exists()
-            and self._data["version"] == 1
-        )
+        """
+        Attempts to validate loaded data as a conda lock v1 specification.
+
+        :raises ValueError: Raised when validation fails
+        """
+        # Check filename first (before trying to load the file)
+        if self.path.name not in DEFAULT_FILENAMES:
+            raise ValueError(
+                "Invalid filename: {self.path}; please choose one from: "
+                f"{DEFAULT_FILENAMES}"
+            )
+
+        try:
+            _validate_v1(self._data, self.path)
+            return True
+        except (FileNotFoundError, YAMLError) as e:
+            raise ValueError(f"Cannot load file {self.path}: {e}") from e
 
     @property
     def _data(self) -> dict[str, Any]:

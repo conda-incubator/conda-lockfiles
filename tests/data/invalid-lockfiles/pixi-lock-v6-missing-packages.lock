@@ -1,0 +1,8 @@
+version: 6
+environments:
+  default:
+    channels:
+    - url: conda-forge
+    packages:
+      noarch:
+      - conda: https://conda.anaconda.org/conda-forge/noarch/test-1.0-0.conda

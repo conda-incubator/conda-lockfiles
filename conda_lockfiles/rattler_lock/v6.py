@@ -233,6 +233,73 @@ def _rattler_lock_v6_package_to_record_overrides(
     return kwargs  # type: ignore
 
 
+def _validate_v6(data: dict[str, Any], path: Path) -> None:
+    """
+    Validate the rattler lock v6 specification.
+
+    :raises ValueError: Raised when validation fails
+    """
+    if path.name not in DEFAULT_FILENAMES:
+        raise ValueError(
+            f"Invalid filename: {path}; please choose one from: {DEFAULT_FILENAMES}"
+        )
+
+    if not path.exists():
+        raise ValueError(f"File does not exist: {path}")
+
+    # Validate lockfile structure
+    try:
+        # Check version
+        if data["version"] != 6:
+            raise ValueError(f"File {path} has invalid version (!= 6)")
+
+        # Check required fields exist and have correct types
+        environments = data.get("environments")
+        if not isinstance(environments, dict):
+            raise ValueError(
+                f"File {path} has version 6 but environments is not a mapping"
+            )
+
+        if "default" not in environments:
+            raise ValueError(f"File {path} has version 6 but no default environment")
+
+        default_env = environments["default"]
+        if not isinstance(default_env, dict):
+            raise ValueError(
+                f"File {path} has version 6 but default environment is not a mapping"
+            )
+
+        if "channels" not in default_env or not isinstance(
+            default_env["channels"], list
+        ):
+            raise ValueError(
+                f"File {path} has version 6 but missing or invalid channels in default "
+                "environment"
+            )
+
+        if "packages" not in default_env or not isinstance(
+            default_env["packages"], dict
+        ):
+            raise ValueError(
+                f"File {path} has version 6 but missing or invalid packages in default "
+                "environment"
+            )
+
+        if not default_env["packages"]:
+            raise ValueError(
+                f"File {path} has version 6 but no packages in default environment"
+            )
+
+        # Check packages field exists and is a list
+        if "packages" not in data or not isinstance(data["packages"], list):
+            raise ValueError(
+                f"File {path} has version 6 but missing or invalid packages list"
+            )
+
+    except (KeyError, TypeError) as e:
+        raise ValueError(f"File {path} has version 6 but failed validation: {e}")
+
+
 class RattlerLockV6Loader(EnvironmentSpecBase):
     detection_supported: ClassVar[bool] = True
 
@@ -240,11 +307,23 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
         self.path = Path(path).resolve()
 
     def can_handle(self) -> bool:
-        return (
-            self.path.name in DEFAULT_FILENAMES
-            and self.path.exists()
-            and self._data["version"] == 6
-        )
+        """
+        Attempts to validate loaded data as a rattler lock v6 specification.
+
+        :raises ValueError: Raised when validation fails
+        """
+        # Check filename first (before trying to load the file)
+        if self.path.name not in DEFAULT_FILENAMES:
+            raise ValueError(
+                "Invalid filename: {self.path}; please choose one from: "
+                f"{DEFAULT_FILENAMES}"
+            )
+
+        try:
+            _validate_v6(self._data, self.path)
+            return True
+        except (FileNotFoundError, YAMLError) as e:
+            raise ValueError(f"Cannot load file {self.path}: {e}") from e
 
     @property
     def _data(self) -> dict[str, Any]:
