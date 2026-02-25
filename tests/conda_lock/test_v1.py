@@ -190,6 +190,6 @@ def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
 
     loader = CondaLockV1Loader(invalid_lockfile)
 
-    # Should raise ValueError with descriptive message
-    with pytest.raises(ValueError, match="has version 1 but"):
+    # Should raise ValueError with descriptive message (Pydantic format)
+    with pytest.raises(ValueError, match="missing required field 'metadata'"):
         loader.can_handle()

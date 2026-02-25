@@ -73,7 +73,7 @@ def test_can_handle(tmp_path: Path) -> None:
         RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
 
     # Non-existent file should raise ValueError
-    with pytest.raises(ValueError, match="Cannot load file"):
+    with pytest.raises(ValueError, match="File not found"):
         RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
 
     # Both invalid filename and non-existent should raise ValueError
@@ -170,5 +170,5 @@ def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
     loader = RattlerLockV6Loader(invalid_lockfile)
 
     # Should raise ValueError with descriptive message
-    with pytest.raises(ValueError, match="has version 6 but"):
+    with pytest.raises(ValueError, match="missing required field 'environments'"):
         loader.can_handle()
