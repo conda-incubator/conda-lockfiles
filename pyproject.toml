@@ -23,6 +23,7 @@ requires-python = ">=3.10"
 dependencies = [
   # "conda >=25.9.0",
   "ruamel.yaml",
+  "pydantic>=2.12.5,<3"
 ]
 dynamic = ["version"]
 
@@ -40,6 +41,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64", "linux-aarch64"]
 python = ">=3.10"
 conda = ">=25.9"
 "ruamel.yaml" = "*"
+pydantic = ">=2.12.5,<3"
 
 [tool.pixi.pypi-dependencies]
 conda-lockfiles = { path  = ".", editable = true }
