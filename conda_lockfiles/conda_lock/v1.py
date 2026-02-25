@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal  # noqa
 
 from conda.base.context import context
 from conda.common.serialize import yaml_safe_dump
@@ -23,7 +23,7 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Any, ClassVar, Final, Literal
+    from typing import Any, ClassVar, Final
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
