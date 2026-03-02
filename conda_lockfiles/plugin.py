@@ -16,10 +16,12 @@ def conda_environment_specifiers() -> Iterable[CondaEnvironmentSpecifier]:
 
     yield CondaEnvironmentSpecifier(
         name=conda_lock_v1.FORMAT,
+        aliases=conda_lock_v1.ALIASES,
         environment_spec=conda_lock_v1.CondaLockV1Loader,
     )
     yield CondaEnvironmentSpecifier(
         name=rattler_lock_v6.FORMAT,
+        aliases=rattler_lock_v6.ALIASES,
         environment_spec=rattler_lock_v6.RattlerLockV6Loader,
     )
 
