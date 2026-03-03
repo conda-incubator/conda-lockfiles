@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.exceptions import CondaValueError
 from conda.models.environment import Environment
 
 from conda_lockfiles.conda_lock.v1 import (
@@ -173,23 +174,20 @@ def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
     """Test that can_handle properly validates lockfile structure."""
     loader = CondaLockV1Loader(lockfile)
 
-    if should_raise:
-        # Invalid lockfiles should raise ValueError
-        with pytest.raises(ValueError):
-            loader.can_handle()
-    else:
-        # Valid lockfile should return True
-        assert loader.can_handle()
+    with pytest.raises(ValueError) if should_raise else nullcontext():
+        result = loader.can_handle()
+        if not should_raise:
+            assert result
 
 
 def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
-    """Test that validation errors raise ValueError with descriptive messages."""
+    """Test that validation errors raise CondaValueError with descriptive messages."""
     # Create an invalid lockfile
     invalid_lockfile = tmp_path / CONDA_LOCK_FILE
     invalid_lockfile.write_text("version: 1\npackage: []")
 
     loader = CondaLockV1Loader(invalid_lockfile)
 
-    # Should raise ValueError with descriptive message (Pydantic format)
-    with pytest.raises(ValueError, match="missing required field 'metadata'"):
+    # Should raise CondaValueError with descriptive message (Pydantic format)
+    with pytest.raises(CondaValueError, match="missing required field 'metadata'"):
         loader.can_handle()
