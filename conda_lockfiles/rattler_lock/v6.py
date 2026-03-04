@@ -12,8 +12,9 @@ from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from ruamel.yaml import YAMLError
+from ruamel.yaml.parser import ParserError
 
-from ..exceptions import CondaLockfilesValidationError
+from ..exceptions import CondaLockfilesValidationError, UnableToParseError
 from ..load_yaml import load_yaml
 from ..records_from_conda_urls import records_from_conda_urls
 from ..validate_urls import validate_urls
@@ -255,11 +256,6 @@ def rattler_lock_v6_to_conda_env(
             f"Environment '{name}' not found.\n"
             f"Available environments: {dashlist(sorted(lockfile.environments))}"
         )
-    if platform not in environment.packages:
-        raise ValueError(
-            f"Lockfile does not list packages for platform {platform}.\n"
-            f"Available platforms: {dashlist(sorted(environment.packages))}"
-        )
 
     channels = environment.channels
     config = EnvironmentConfig(
@@ -321,12 +317,6 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
 
         :raises ValueError: Raised when validation fails
         """
-        # Check filename first (before trying to load the file)
-        if self.path.name not in DEFAULT_FILENAMES:
-            raise ValueError(
-                f"Invalid filename: {self.path}; please choose one from: "
-                f"{DEFAULT_FILENAMES}"
-            )
         if not self.path.exists():
             raise ValueError(f"File not found: {self.path}")
 
@@ -347,7 +337,10 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
 
     @property
     def _data(self) -> dict[str, Any]:
-        return load_yaml(self.path)
+        try:
+            return load_yaml(self.path)
+        except ParserError as e:
+            raise UnableToParseError(e, self.path)
 
     @property
     def env(self) -> Environment:

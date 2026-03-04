@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pydantic import ValidationError
+    from ruamel.yaml.parser import ParserError
 
 
 class LockfileFormatNotSupported(CondaError):
@@ -79,4 +80,10 @@ class CondaLockfilesValidationError(CondaValueError):
             formatted_list = dashlist(error_messages)
             message = f"File {file_path} has validation errors:\n{formatted_list}"
 
+        super().__init__(message)
+
+
+class UnableToParseError(CondaError):
+    def __init__(self, e: ParserError, path: str):
+        message = f"Unable to parse the content at '{path}': {e}"
         super().__init__(message)
