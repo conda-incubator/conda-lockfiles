@@ -10,7 +10,7 @@ from conda.exceptions import CondaValueError
 from conda.models.channel import Channel
 from conda.models.environment import Environment, EnvironmentConfig
 from conda.plugins.types import EnvironmentSpecBase
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from ruamel.yaml import YAMLError
 
 from ..exceptions import CondaLockfilesValidationError
@@ -20,7 +20,7 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Annotated, Any, ClassVar, Final, Self, TypedDict
+    from typing import Annotated, Any, ClassVar, Final, TypedDict
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
@@ -87,28 +87,38 @@ class RattlerLockV6PackageReference(BaseModel):
 
     conda: str | None = None
     pypi: str | None = None
-    package_type: PackageType | None = Field(default=None, exclude=True)
 
     @field_validator("conda", "pypi")
     @classmethod
-    def check_at_least_one(cls, v, info):
+    def check_at_least_one(cls, value, info):
         """Ensure at least one package manager is specified."""
-        if not v and not info.data.get("conda") and not info.data.get("pypi"):
+        if not value and not info.data.get("conda") and not info.data.get("pypi"):
             raise ValueError("Either 'conda' or 'pypi' must be specified")
 
-        if v and info.data.get("conda") and info.data.get("pypi"):
+        if value and info.data.get("conda") and info.data.get("pypi"):
             raise ValueError("Either 'conda' or 'pypi' must be specified, not both")
 
-        return v
+        return value
 
-    @model_validator(mode="after")
-    def set_package_type(self) -> Self:
-        """Set package_type from conda/pypi fields."""
+    # NOTE: properties are excluded from the model_dump() output
+    @property
+    def package_type(self) -> Literal["conda", "pypi"]:
         if self.conda:
-            self.package_type = "conda"
+            return "conda"
         elif self.pypi:
-            self.package_type = "pypi"
-        return self
+            return "pypi"
+        else:
+            raise ValueError("Either 'conda' or 'pypi' must be specified")
+
+    # NOTE: properties are excluded from the model_dump() output
+    @property
+    def url(self) -> str:
+        if self.conda:
+            return self.conda
+        elif self.pypi:
+            return self.pypi
+        else:
+            raise ValueError("Either 'conda' or 'pypi' must be specified")
 
 
 class RattlerLockV6Package(RattlerLockV6PackageReference):
@@ -156,11 +166,11 @@ class RattlerLockV6(BaseModel):
 
     @field_validator("environments")
     @classmethod
-    def check_default_env(cls, v):
+    def check_default_env(cls, value):
         """Ensure default environment exists."""
-        if "default" not in v:
+        if "default" not in value:
             raise ValueError("Lock file must contain a 'default' environment")
-        return v
+        return value
 
     def get_package_metadata(
         self, url: str, package_type: PackageType
