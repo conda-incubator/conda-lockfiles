@@ -87,19 +87,17 @@ def test_export_lockfile_with_pip_deps():
 
 
 def test_can_handle(tmp_path: Path) -> None:
-    assert CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE).can_handle()
+    loader = CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE)
+    assert loader.can_handle()
+    assert loader.env
 
-    # Invalid filename should raise ValueError
-    with pytest.raises(ValueError, match="Invalid filename"):
+    # Invalid file type should raise ValueError
+    with pytest.raises(ValueError, match="validation errors:"):
         CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / "environment.yaml").can_handle()
 
     # Non-existent file should raise ValueError
     with pytest.raises(ValueError, match="Cannot load file"):
         CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
-
-    # Both invalid filename and non-existent should raise ValueError
-    with pytest.raises(ValueError, match="Invalid filename"):
-        CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
 
 
 def test_data() -> None:
@@ -163,11 +161,6 @@ def test_noarch(
             True,
             id="invalid-metadata-type",
         ),
-        pytest.param(
-            INVALID_LOCKFILES_DIR / "conda-lock-v1-invalid-platforms.yml",
-            True,
-            id="invalid-platform",
-        ),
     ],
 )
 def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
@@ -177,7 +170,10 @@ def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
     with pytest.raises(ValueError) if should_raise else nullcontext():
         result = loader.can_handle()
         if not should_raise:
+            # If the validation should be successful, ensure that
+            # can_handle returns True and the environment can be loaded.
             assert result
+            loader.env
 
 
 def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
