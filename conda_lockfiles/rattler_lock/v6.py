@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated  # noqa: TCH003
 
 from conda.base.context import context
 from conda.common.io import dashlist
@@ -20,7 +20,7 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Annotated, Any, ClassVar, Final, Literal
+    from typing import Any, ClassVar, Final, Literal
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
