@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.exceptions import CondaValueError
 from conda.models.environment import Environment
 
 from conda_lockfiles.conda_lock.v1 import (
@@ -19,6 +20,7 @@ from conda_lockfiles.load_yaml import load_yaml
 
 from .. import (
     CONDA_LOCK_METADATA_DIR,
+    INVALID_LOCKFILES_DIR,
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
     compare_conda_lock_v1,
@@ -86,11 +88,18 @@ def test_export_lockfile_with_pip_deps():
 
 def test_can_handle(tmp_path: Path) -> None:
     assert CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE).can_handle()
-    assert not CondaLockV1Loader(
-        CONDA_LOCK_METADATA_DIR / "environment.yaml"
-    ).can_handle()
-    assert not CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
-    assert not CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
+
+    # Invalid filename should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        CondaLockV1Loader(CONDA_LOCK_METADATA_DIR / "environment.yaml").can_handle()
+
+    # Non-existent file should raise ValueError
+    with pytest.raises(ValueError, match="Cannot load file"):
+        CondaLockV1Loader(tmp_path / CONDA_LOCK_FILE).can_handle()
+
+    # Both invalid filename and non-existent should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        CondaLockV1Loader(tmp_path / "environment.yaml").can_handle()
 
 
 def test_data() -> None:
@@ -129,3 +138,56 @@ def test_noarch(
             )
             == platforms
         )
+
+
+@pytest.mark.parametrize(
+    "lockfile,should_raise",
+    [
+        pytest.param(
+            CONDA_LOCK_METADATA_DIR / CONDA_LOCK_FILE,
+            False,
+            id="valid-lockfile",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-missing-metadata.yml",
+            True,
+            id="missing-metadata",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-missing-package.yml",
+            True,
+            id="missing-package",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-invalid-metadata-type.yml",
+            True,
+            id="invalid-metadata-type",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "conda-lock-v1-invalid-platforms.yml",
+            True,
+            id="invalid-platform",
+        ),
+    ],
+)
+def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
+    """Test that can_handle properly validates lockfile structure."""
+    loader = CondaLockV1Loader(lockfile)
+
+    with pytest.raises(ValueError) if should_raise else nullcontext():
+        result = loader.can_handle()
+        if not should_raise:
+            assert result
+
+
+def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
+    """Test that validation errors raise CondaValueError with descriptive messages."""
+    # Create an invalid lockfile
+    invalid_lockfile = tmp_path / CONDA_LOCK_FILE
+    invalid_lockfile.write_text("version: 1\npackage: []")
+
+    loader = CondaLockV1Loader(invalid_lockfile)
+
+    # Should raise CondaValueError with descriptive message (Pydantic format)
+    with pytest.raises(CondaValueError, match="missing required field 'metadata'"):
+        loader.can_handle()

@@ -5,13 +5,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.base.context import context, reset_context
+from conda.exceptions import CondaValueError
 
 from conda_lockfiles.exceptions import EnvironmentExportNotSupported
 from conda_lockfiles.load_yaml import load_yaml
 from conda_lockfiles.rattler_lock.v6 import PIXI_LOCK_FILE, RattlerLockV6Loader
 
 from .. import (
+    INVALID_LOCKFILES_DIR,
     PIXI_DIR,
+    PIXI_METADATA_DIR,
     SINGLE_PACKAGE_ENV,
     SINGLE_PACKAGE_NO_URL_ENV,
     compare_rattler_lock_v6,
@@ -65,9 +68,18 @@ def test_export_to_rattler_lock_v6(
 
 def test_can_handle(tmp_path: Path) -> None:
     assert RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE).can_handle()
-    assert not RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
-    assert not RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
-    assert not RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
+
+    # Invalid filename should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
+
+    # Non-existent file should raise ValueError
+    with pytest.raises(ValueError, match="File not found"):
+        RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
+
+    # Both invalid filename and non-existent should raise ValueError
+    with pytest.raises(ValueError, match="Invalid filename"):
+        RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
 
 
 def test_data() -> None:
@@ -105,3 +117,56 @@ def test_noarch(
             )
             == 1
         )
+
+
+@pytest.mark.parametrize(
+    "lockfile,should_raise",
+    [
+        pytest.param(
+            PIXI_METADATA_DIR / PIXI_LOCK_FILE,
+            False,
+            id="valid-lockfile",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "pixi-lock-v6-missing-environments.lock",
+            True,
+            id="missing-environments",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "pixi-lock-v6-missing-packages.lock",
+            True,
+            id="missing-packages",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "pixi-lock-v6-invalid-environments-type.lock",
+            True,
+            id="invalid-environments-type",
+        ),
+        pytest.param(
+            INVALID_LOCKFILES_DIR / "pixi-lock-v6-invalid-platform.lock",
+            True,
+            id="invalid-platform",
+        ),
+    ],
+)
+def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
+    """Test that can_handle properly validates lockfile structure."""
+    loader = RattlerLockV6Loader(lockfile)
+
+    with pytest.raises(ValueError) if should_raise else nullcontext():
+        result = loader.can_handle()
+        if not should_raise:
+            assert result
+
+
+def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
+    """Test that validation errors raise CondaValueError with descriptive messages."""
+    # Create an invalid lockfile
+    invalid_lockfile = tmp_path / PIXI_LOCK_FILE
+    invalid_lockfile.write_text("version: 6\npackages: []")
+
+    loader = RattlerLockV6Loader(invalid_lockfile)
+
+    # Should raise CondaValueError with descriptive message
+    with pytest.raises(CondaValueError, match="missing required field 'environments'"):
+        loader.can_handle()
