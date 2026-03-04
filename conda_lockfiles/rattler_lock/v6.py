@@ -68,8 +68,12 @@ PIXI_LOCK_FILE: Final = "pixi.lock"
 #: Default filenames for the rattler lock v6 format.
 DEFAULT_FILENAMES: Final = (PIXI_LOCK_FILE,)
 
-#: Supported package types.
-PACKAGE_TYPES: Final = {"pypi", "conda"}
+#: Mapping of supported package types (as used in the lockfile) to package
+#: managers (as used in the environment)
+PACKAGE_TYPE_MAPPING: Final = {
+    # "conda": "conda",  # processed as conda (explicit) packages
+    "pypi": "pypi",
+}
 
 #: Supported package types.
 PackageType = Literal["conda", "pypi"]
@@ -171,21 +175,6 @@ class RattlerLockV6(BaseModel):
         if "default" not in value:
             raise ValueError("Lock file must contain a 'default' environment")
         return value
-
-    def get_package_metadata(
-        self, url: str, package_type: PackageType
-    ) -> RattlerLockV6Package | None:
-        """
-        Get package by searching with ``url`` and ``package_type``
-        """
-        try:
-            return next(
-                filter(
-                    lambda pkg: getattr(pkg, package_type, None) == url, self.packages
-                )
-            )
-        except StopIteration:
-            raise ValueError(f"Could not find package with url '{url}' in lockfile")
 
 
 def _record_to_package(record: PackageRecord) -> RattlerLockV6Package:
@@ -307,21 +296,22 @@ def rattler_lock_v6_to_conda_env(
         channels=tuple(Channel(channel.url).canonical_name for channel in channels),
     )
 
-    explicit_packages = {
-        getattr(pkg, "conda"): lockfile.get_package_metadata(
-            getattr(pkg, "conda"), pkg.package_type
-        ).model_dump()
-        for pkg in environment.packages.get(platform)
-        if pkg.package_type == "conda"
-    }
-
-    external_packages = {
-        getattr(pkg, pkg.package_type): lockfile.get_package_metadata(
-            getattr(pkg, pkg.package_type), pkg.package_type
-        ).model_dump()
-        for pkg in environment.packages.get(platform)
-        if pkg.package_type != "conda"
-    }
+    # Map rattler v6 packages to conda/external package records
+    explicit_packages: dict[str, dict[str, Any]] = {}
+    external_packages: dict[str, list[str]] = {}
+    for ref in environment.packages.get(platform, ()):
+        # Group by manager
+        if ref.conda:
+            explicit_packages[ref.url] = next(
+                pkg for pkg in lockfile.packages if pkg.url == ref.url
+            ).model_dump()
+        else:
+            # Map rattler v6 package type to conda package type
+            try:
+                key = PACKAGE_TYPE_MAPPING[ref.package_type]
+            except KeyError:
+                raise ValueError(f"Unknown package type: {ref.package_type}")
+            external_packages.setdefault(key, []).append(ref.url)
 
     return Environment(
         prefix=context.target_prefix,

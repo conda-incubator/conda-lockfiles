@@ -46,8 +46,8 @@ TIMESTAMP: Final = "%Y-%m-%dT%H:%M:%SZ"
 
 #: Mapping of supported package types (as used in the lockfile) to package
 #: managers (as used in the environment)
-PACKAGE_TYPES: Final = {
-    "conda": "conda",
+PACKAGE_TYPE_MAPPING: Final = {
+    # "conda": "conda",  # processed as conda (explicit) packages
     "pip": "pypi",
 }
 
@@ -256,9 +256,9 @@ def conda_lock_v1_to_conda_env(
         ),
     )
 
+    # Map conda-lock v1 packages to conda/external package records
     explicit_packages: dict[str, dict[str, Any]] = {}
     external_packages: dict[str, list[str]] = {}
-
     for pkg in lockfile.package:
         # Filter packages
         if pkg.platform != platform:
@@ -274,8 +274,9 @@ def conda_lock_v1_to_conda_env(
         if pkg.manager == "conda":
             explicit_packages[pkg.url] = _package_to_record_overrides(pkg)
         else:
+            # Map conda-lock v1 package type to conda package type
             try:
-                key = PACKAGE_TYPES[pkg.manager]
+                key = PACKAGE_TYPE_MAPPING[pkg.manager]
             except KeyError:
                 raise ValueError(f"Unknown package type: {pkg.manager}")
             external_packages.setdefault(key, []).append(pkg.url)
