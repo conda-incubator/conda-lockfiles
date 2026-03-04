@@ -203,7 +203,7 @@ def conda_lock_v1_from_conda_envs(envs: Iterable[Environment]) -> CondaLockV1:
     packages: list[CondaLockV1Package] = [
         _record_to_package(pkg, platform)
         for pkg, platform in sorted(
-            # canonical order: sorted by platform/subdir then by URL
+            # Canonical order is sorted by platform/subdir then by URL
             ((pkg, env.platform) for env in env_list for pkg in env.explicit_packages),
             key=lambda pkg_platform: (pkg_platform[1], pkg_platform[0].url),
         )
@@ -233,7 +233,8 @@ def conda_lock_v1_from_conda_envs(envs: Iterable[Environment]) -> CondaLockV1:
 
 
 def conda_lock_v1_to_conda_env(
-    lockfile: CondaLockV1, platform: str = context.subdir
+    lockfile: CondaLockV1,
+    platform: str = context.subdir,
 ) -> Environment:
     """
     Render lockfile as a conda environment.

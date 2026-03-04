@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.common.io import dashlist
@@ -20,40 +20,10 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Annotated, Any, ClassVar, Final, TypedDict
+    from typing import Annotated, Any, ClassVar, Final, Literal
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
-
-    class RattlerLockV6CondaKeyType(TypedDict):
-        conda: str
-
-    class RattlerLockV6PypiKeyType(TypedDict):
-        pypi: str
-
-    class RattlerLockV6OverrideKeysType(TypedDict):
-        sha256: str
-        md5: str
-        license: str
-        size: int
-        timestamp: int
-
-    class RattlerLockV6CondaPackageType(
-        RattlerLockV6CondaKeyType, RattlerLockV6OverrideKeysType
-    ): ...
-
-    class RattlerLockV6PypiPackageType(
-        RattlerLockV6PypiKeyType, RattlerLockV6OverrideKeysType
-    ): ...
-
-    class RattlerLockV6UrlKeyType(TypedDict):
-        url: str
-
-    class RattlerLockV6EnvironmentType(TypedDict):
-        channels: list[RattlerLockV6UrlKeyType]
-        packages: dict[
-            str, list[RattlerLockV6CondaPackageType | RattlerLockV6PypiPackageType]
-        ]
 
 
 #: The name of the rattler lock v6 format.
@@ -75,11 +45,7 @@ PACKAGE_TYPE_MAPPING: Final = {
     "pypi": "pypi",
 }
 
-#: Supported package types.
-PackageType = Literal["conda", "pypi"]
 
-
-# Pydantic Models
 class RattlerLockV6Channel(BaseModel):
     """A channel specification in a rattler lock file."""
 
@@ -187,8 +153,7 @@ def _record_to_package(record: PackageRecord) -> RattlerLockV6Package:
     # Build kwargs for RattlerLockV6Package constructor
     kwargs = {"conda": record.url}
 
-    # Add optional metadata fields (same as previous _record_to_dict logic)
-    # add relevent non-empty fields that rattler_lock includes in v6 lockfiles
+    # Add optional metadata fields that rattler_lock includes in v6 lockfiles
     # https://github.com/conda/rattler/blob/rattler_lock-v0.23.5/crates/rattler_lock/src/parse/models/v6/conda_package_data.rs#L46
     fields = [
         # channel, subdir, name, build and version can be determined from the URL
@@ -201,9 +166,9 @@ def _record_to_package(record: PackageRecord) -> RattlerLockV6Package:
         "license",
         "license_family",
         "size",
-        # libmamba-conda-solver does not record the repodata timestamp,
-        # do not include this field, see:
-        # https://github.com/conda/conda-libmamba-solver/issues/673
+        # conda-libmamba-solver does not record the repodata timestamp,
+        # do not include this field
+        # See: https://github.com/conda/conda-libmamba-solver/issues/673
         # "timestamp",
         "python_site_packages_path",
     ]
@@ -231,7 +196,6 @@ def rattler_lock_v6_from_conda_envs(envs: Iterable[Environment]) -> RattlerLockV
         validate_urls(env, FORMAT)
 
     # Build per-platform package references
-    seen = set()
     packages: list[RattlerLockV6Package] = []
     platforms: dict[str, list[RattlerLockV6PackageReference]] = {
         platform: [] for platform in sorted(env.platform for env in env_list)
@@ -240,8 +204,10 @@ def rattler_lock_v6_from_conda_envs(envs: Iterable[Environment]) -> RattlerLockV
     # TODO: Add support for external_packages (PyPI packages)
     # Currently only exports conda packages from env.explicit_packages
 
-    # Process packages in canonical order (sorted by name, then platform)
+    # Process packages
+    seen = set()  # Track package URLs to avoid duplicates
     for pkg, platform in sorted(
+        # Canonical order is sorted by name then by platform
         ((pkg, env.platform) for env in env_list for pkg in env.explicit_packages),
         key=lambda pkg_platform: (pkg_platform[0].name, pkg_platform[1]),
     ):
@@ -264,12 +230,16 @@ def rattler_lock_v6_from_conda_envs(envs: Iterable[Environment]) -> RattlerLockV
 
     # Construct and return RattlerLockV6 instance
     return RattlerLockV6(
-        version=6, environments={"default": default_env}, packages=packages
+        version=6,
+        environments={"default": default_env},
+        packages=packages,
     )
 
 
 def rattler_lock_v6_to_conda_env(
-    lockfile: RattlerLockV6, name: str = "default", platform: str = context.subdir
+    lockfile: RattlerLockV6,
+    name: str = "default",
+    platform: str = context.subdir,
 ) -> Environment:
     """
     Render lockfile as a conda environment
@@ -282,13 +252,13 @@ def rattler_lock_v6_to_conda_env(
     # validate `name` and `platform` arguments
     if not (environment := lockfile.environments.get(name, None)):
         raise ValueError(
-            f"Environment '{name}' not found. \n"
-            f"Available environments: {dashlist(sorted(lockfile.environments.keys()))}"
+            f"Environment '{name}' not found.\n"
+            f"Available environments: {dashlist(sorted(lockfile.environments))}"
         )
     if platform not in environment.packages:
         raise ValueError(
             f"Lockfile does not list packages for platform {platform}.\n"
-            f"Available platforms: {dashlist(sorted(environment.packages))}."
+            f"Available platforms: {dashlist(sorted(environment.packages))}"
         )
 
     channels = environment.channels
