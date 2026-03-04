@@ -1,0 +1,9 @@
+version: 6
+packages:
+- conda: https://conda.anaconda.org/conda-forge/noarch/test-1.0-0.conda
+  subdir: noarch
+  sha256: afc0b8eb310986a004dbcb729d82ba5591de474fa6616924b0e4b62702b88d58
+  md5: b2fb2a72c20eef6f08526da54a702735
+  channel: conda-forge
+  size: 3178
+  timestamp: 1746735258166

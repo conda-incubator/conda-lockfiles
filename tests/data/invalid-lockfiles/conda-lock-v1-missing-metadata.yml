@@ -1,0 +1,12 @@
+version: 1
+package:
+- name: test
+  version: '1.0'
+  manager: conda
+  platform: linux-64
+  dependencies: {}
+  url: https://conda.anaconda.org/conda-forge/linux-64/test-1.0-0.tar.bz2
+  hash:
+    md5: d7c89558ba9fa0495403155b64376d81
+  category: main
+  optional: false
