@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Literal  # noqa
+from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.common.serialize import yaml_safe_dump
@@ -23,7 +23,7 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Any, ClassVar, Final
+    from typing import Annotated, Any, ClassVar, Final, Literal
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
@@ -75,9 +75,9 @@ class CondaLockV1Package(BaseModel):
     version: str
     manager: Literal["conda", "pypi"]
     platform: str
-    dependencies: dict[str, str] = Field(default_factory=dict)
+    dependencies: Annotated[dict[str, str], Field(default_factory=dict)]
     url: str
-    hash: CondaLockV1Hash = Field(default_factory=CondaLockV1Hash)
+    hash: Annotated[CondaLockV1Hash, Field(default_factory=CondaLockV1Hash)]
     category: str = "main"
     optional: bool = False
 
@@ -86,7 +86,7 @@ class CondaLockV1Channel(BaseModel):
     """A channel specification in the metadata."""
 
     url: str
-    used_env_vars: list[str] = Field(default_factory=list)
+    used_env_vars: Annotated[list[str], Field(default_factory=list)]
 
 
 class CondaLockV1TimeMetadata(BaseModel):
@@ -104,10 +104,10 @@ class CondaLockV1CustomMetadata(BaseModel):
 class CondaLockV1Metadata(BaseModel):
     """Metadata section of the conda-lock v1 lockfile."""
 
-    content_hash: dict[str, str] = Field(default_factory=dict)
+    content_hash: Annotated[dict[str, str], Field(default_factory=dict)]
     channels: list[CondaLockV1Channel]
     platforms: Annotated[list[str], Field(min_length=1)]
-    sources: list[str] = Field(default_factory=list)
+    sources: Annotated[list[str], Field(default_factory=list)]
     time_metadata: CondaLockV1TimeMetadata | None = None
     custom_metadata: CondaLockV1CustomMetadata | None = None
 

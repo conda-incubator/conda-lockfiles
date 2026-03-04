@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Literal  # noqa: TCH003
+from typing import TYPE_CHECKING, Literal
 
 from conda.base.context import context
 from conda.common.io import dashlist
@@ -20,7 +20,7 @@ from ..validate_urls import validate_urls
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Any, ClassVar, Final, Self, TypedDict
+    from typing import Annotated, Any, ClassVar, Final, Self, TypedDict
 
     from conda.common.path import PathType
     from conda.models.records import PackageRecord
@@ -132,23 +132,27 @@ class RattlerLockV6Environment(BaseModel):
     """An environment specification in a rattler lock file."""
 
     channels: list[RattlerLockV6Channel]
-    packages: dict[str, list[RattlerLockV6PackageReference]] = Field(
-        description="Mapping of platform names to package lists"
-    )
+    packages: Annotated[
+        dict[str, list[RattlerLockV6PackageReference]],
+        Field(description="Mapping of platforms to package references (package URLs)"),
+    ]
 
 
 class RattlerLockV6(BaseModel):
     """The root structure of a rattler lock v6 file."""
 
     version: Annotated[
-        int, Field(le=6, ge=6, description="Lock file format version, must be 6")
+        int,
+        Field(le=6, ge=6, description="Lock file format version, must be 6"),
     ] = 6
-    environments: dict[str, RattlerLockV6Environment] = Field(
-        description="Mapping of environment names to environment specifications"
-    )
-    packages: list[RattlerLockV6Package] = Field(
-        description="Complete list of packages with full metadata"
-    )
+    environments: Annotated[
+        dict[str, RattlerLockV6Environment],
+        Field(description="Mapping of environment names to environment specifications"),
+    ]
+    packages: Annotated[
+        list[RattlerLockV6Package],
+        Field(description="Complete list of packages with full metadata"),
+    ]
 
     @field_validator("environments")
     @classmethod
