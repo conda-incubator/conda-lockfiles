@@ -140,8 +140,8 @@ def _record_to_package(
 
     # Build hash dict
     hash_dict = CondaLockV1Hash(
-        md5=record.md5 if record.md5 else None,
-        sha256=record.sha256 if record.sha256 else None,
+        md5=record.md5,
+        sha256=record.sha256,
     )
 
     return CondaLockV1Package(
