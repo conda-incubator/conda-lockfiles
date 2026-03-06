@@ -17,7 +17,7 @@ from ruamel.yaml import YAMLError
 from ruamel.yaml.parser import ParserError
 
 from .. import __version__
-from ..exceptions import CondaLockfilesValidationError, CondaLockfilesParserError
+from ..exceptions import CondaLockfilesParserError, CondaLockfilesValidationError
 from ..load_yaml import load_yaml
 from ..records_from_conda_urls import records_from_conda_urls
 from ..validate_urls import validate_urls

@@ -7,7 +7,10 @@ import pytest
 from conda.base.context import context, reset_context
 from conda.exceptions import CondaValueError
 
-from conda_lockfiles.exceptions import EnvironmentExportNotSupported, UnableToParseError
+from conda_lockfiles.exceptions import (
+    CondaLockfilesParserError,
+    EnvironmentExportNotSupported,
+)
 from conda_lockfiles.load_yaml import load_yaml
 from conda_lockfiles.rattler_lock.v6 import PIXI_LOCK_FILE, RattlerLockV6Loader
 
@@ -72,7 +75,7 @@ def test_can_handle(tmp_path: Path) -> None:
     assert loader.env
 
     # Invalid yaml file should raise a parse error
-    with pytest.raises(UnableToParseError, match="Unable to parse the content"):
+    with pytest.raises(CondaLockfilesParserError, match="Unable to parse the content"):
         RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
 
     # Non-existent file should raise ValueError
