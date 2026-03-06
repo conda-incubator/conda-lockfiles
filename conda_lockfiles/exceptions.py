@@ -83,7 +83,12 @@ class CondaLockfilesValidationError(CondaValueError):
         super().__init__(message)
 
 
-class UnableToParseError(CondaError):
-    def __init__(self, e: ParserError, path: str):
+class CondaLockfilesParserError(CondaError):
+    """
+    Exception raised when a parsing error (e.g. `json` or `yaml`) has been encountered.
+    
+    We use this as a wrapper to ensure dependency specific errors (e.g. `ruamel.yaml`) are rendered correctly as a ``CondaError`` subclass.
+    """
+    def __init__(self, e: Exception, path: str):
         message = f"Unable to parse the content at '{path}': {e}"
         super().__init__(message)
