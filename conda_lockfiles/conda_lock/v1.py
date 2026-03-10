@@ -14,9 +14,10 @@ from conda.models.match_spec import MatchSpec
 from conda.plugins.types import EnvironmentSpecBase
 from pydantic import BaseModel, Field, ValidationError
 from ruamel.yaml import YAMLError
+from ruamel.yaml.parser import ParserError
 
 from .. import __version__
-from ..exceptions import CondaLockfilesValidationError
+from ..exceptions import CondaLockfilesParserError, CondaLockfilesValidationError
 from ..load_yaml import load_yaml
 from ..records_from_conda_urls import records_from_conda_urls
 from ..validate_urls import validate_urls
@@ -316,13 +317,6 @@ class CondaLockV1Loader(EnvironmentSpecBase):
 
         :raises ValueError: Raised when validation fails
         """
-        # Check filename first
-        if self.path.name not in DEFAULT_FILENAMES:
-            raise ValueError(
-                f"Invalid filename: {self.path}; please choose one from: "
-                f"{DEFAULT_FILENAMES}"
-            )
-
         try:
             return self._validate_model()
         except (FileNotFoundError, YAMLError) as e:
@@ -343,7 +337,10 @@ class CondaLockV1Loader(EnvironmentSpecBase):
 
     @property
     def _data(self) -> dict[str, Any]:
-        return load_yaml(self.path)
+        try:
+            return load_yaml(self.path)
+        except ParserError as e:
+            raise CondaLockfilesParserError(e, self.path)
 
     @property
     def env(self) -> Environment:

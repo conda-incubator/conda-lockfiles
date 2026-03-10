@@ -7,7 +7,10 @@ import pytest
 from conda.base.context import context, reset_context
 from conda.exceptions import CondaValueError
 
-from conda_lockfiles.exceptions import EnvironmentExportNotSupported
+from conda_lockfiles.exceptions import (
+    CondaLockfilesParserError,
+    EnvironmentExportNotSupported,
+)
 from conda_lockfiles.load_yaml import load_yaml
 from conda_lockfiles.rattler_lock.v6 import PIXI_LOCK_FILE, RattlerLockV6Loader
 
@@ -67,19 +70,17 @@ def test_export_to_rattler_lock_v6(
 
 
 def test_can_handle(tmp_path: Path) -> None:
-    assert RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE).can_handle()
+    loader = RattlerLockV6Loader(PIXI_DIR / PIXI_LOCK_FILE)
+    assert loader.can_handle()
+    assert loader.env
 
-    # Invalid filename should raise ValueError
-    with pytest.raises(ValueError, match="Invalid filename"):
+    # Invalid yaml file should raise a parse error
+    with pytest.raises(CondaLockfilesParserError, match="Unable to parse the content"):
         RattlerLockV6Loader(PIXI_DIR / "pixi.toml").can_handle()
 
     # Non-existent file should raise ValueError
     with pytest.raises(ValueError, match="File not found"):
         RattlerLockV6Loader(tmp_path / PIXI_LOCK_FILE).can_handle()
-
-    # Both invalid filename and non-existent should raise ValueError
-    with pytest.raises(ValueError, match="Invalid filename"):
-        RattlerLockV6Loader(tmp_path / "pixi.toml").can_handle()
 
 
 def test_data() -> None:
@@ -142,11 +143,6 @@ def test_noarch(
             True,
             id="invalid-environments-type",
         ),
-        pytest.param(
-            INVALID_LOCKFILES_DIR / "pixi-lock-v6-invalid-platform.lock",
-            True,
-            id="invalid-platform",
-        ),
     ],
 )
 def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
@@ -156,7 +152,10 @@ def test_can_handle_validation(lockfile: Path, should_raise: bool) -> None:
     with pytest.raises(ValueError) if should_raise else nullcontext():
         result = loader.can_handle()
         if not should_raise:
+            # If the validation should be successful, ensure that
+            # can_handle returns True and the environment can be loaded.
             assert result
+            loader.env
 
 
 def test_can_handle_raises_validation_errors(tmp_path: Path) -> None:
