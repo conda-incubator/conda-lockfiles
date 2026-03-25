@@ -34,7 +34,7 @@ def test_records_from_urls_and_metadata() -> None:
 
 #: Used in ``test_records_from_conda_urls_dry_run`` test as expected output
 EXPECTED_DRY_RUN_OUTPUT = (
-    "Dry run would have fetched the following package records:\n"
+    "\nDry run would have fetched the following package records:\n"
     "- example/noarch::package==0.1.0=h396c80c_0[md5=edd329d7d3a4ab45dcf905899a7a6115,"
     "sha256=7c2df5721c742c2a47b2c8f960e718c930031663ac1174da67c1ed5999f7938c]\n"
     "- example/noarch::dependency==0.2.1=h536810c_0[md5=a9d86bc62f39b94c4661716624eb21"
