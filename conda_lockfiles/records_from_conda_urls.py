@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def records_from_conda_urls(
     metadata_by_url: dict[CondaPackageURL, CondaPackageMetadata],
-    dry_run: bool = context.dry_run,
+    dry_run: bool = False,
     download_only: bool = context.download_only,
 ) -> tuple[PackageRecord, ...]:
     """
@@ -37,7 +37,12 @@ def records_from_conda_urls(
         )
         for url, metadata in metadata_by_url.items()
     ]
+
     if dry_run:
+        print("\nDry run would have fetched the following package records:")
+        for record in fetch_specs:
+            print(f"- {record}")
+
         raise DryRunExit()
 
     pfe = ProgressiveFetchExtract(fetch_specs)
