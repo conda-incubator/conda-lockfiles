@@ -34,7 +34,7 @@ homepage = "https://github.com/conda-incubator/conda-lockfiles"
 conda-lockfiles = "conda_lockfiles.plugin"
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-canary/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64", "linux-aarch64"]
 
 [tool.pixi.dependencies]
