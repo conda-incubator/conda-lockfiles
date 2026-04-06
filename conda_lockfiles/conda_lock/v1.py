@@ -40,7 +40,7 @@ ALIASES: Final = ()
 CONDA_LOCK_FILE: Final = "conda-lock.yml"
 
 #: Default filenames for the conda-lock v1 format.
-DEFAULT_FILENAMES: Final = (CONDA_LOCK_FILE,)
+DEFAULT_FILENAMES: Final = (CONDA_LOCK_FILE, "conda-lock.yaml")
 
 #: The timestamp format for the conda-lock v1 format.
 TIMESTAMP: Final = "%Y-%m-%dT%H:%M:%SZ"

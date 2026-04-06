@@ -89,6 +89,27 @@ def test_export(
         assert compare(lockfile, lockfile2)
 
 
+def test_conda_lock_v1_export_detects_yaml_extension(
+    path_factory: PathFactoryFixture,
+    tmp_env: TmpEnvFixture,
+    conda_cli: CondaCLIFixture,
+) -> None:
+    """conda-lock-v1 must be inferred from conda-lock.yaml (CEP-37 / issue #121)."""
+    lockfile = path_factory("conda-lock.yaml")
+    with tmp_env("zlib") as prefix:
+        out, err, rc = conda_cli(
+            "export",
+            f"--prefix={prefix}",
+            f"--file={lockfile}",
+        )
+        assert not out
+        assert not err
+        assert rc == 0
+    data = load_yaml(lockfile)
+    assert data["version"] == 1
+    assert "metadata" in data and "package" in data
+
+
 @pytest.mark.parametrize(
     "format,filename,get_platforms",
     [
