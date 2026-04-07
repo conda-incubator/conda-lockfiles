@@ -74,7 +74,7 @@ def test_records_from_conda_urls_dry_run(monkeypatch, capsys):
     }
 
     with pytest.raises(DryRunExit):
-        _ = records_from_conda_urls(metadata_by_url, dry_run=True)
+        records_from_conda_urls(metadata_by_url, dry_run=True)
 
     out, err = capsys.readouterr()
 
