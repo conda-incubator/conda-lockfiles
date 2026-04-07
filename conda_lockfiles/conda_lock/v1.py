@@ -287,7 +287,9 @@ def conda_lock_v1_to_conda_env(
         prefix=context.target_prefix,
         platform=platform,
         config=config,
-        explicit_packages=records_from_conda_urls(explicit_packages),
+        explicit_packages=records_from_conda_urls(
+            explicit_packages, dry_run=context.dry_run
+        ),
         external_packages=external_packages,
     )
 

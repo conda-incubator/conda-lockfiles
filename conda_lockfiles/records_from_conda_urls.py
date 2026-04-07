@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
+from conda.common.io import dashlist
 from conda.core.package_cache_data import PackageCacheData, ProgressiveFetchExtract
 from conda.exceptions import (
     CondaExitZero,
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 def records_from_conda_urls(
     metadata_by_url: dict[CondaPackageURL, CondaPackageMetadata],
-    dry_run: bool = context.dry_run,
+    dry_run: bool = False,
     download_only: bool = context.download_only,
 ) -> tuple[PackageRecord, ...]:
     """
@@ -37,7 +38,11 @@ def records_from_conda_urls(
         )
         for url, metadata in metadata_by_url.items()
     ]
+
     if dry_run:
+        print("\nDry run would have fetched the following package records:")
+        print(dashlist(fetch_specs))
+
         raise DryRunExit()
 
     pfe = ProgressiveFetchExtract(fetch_specs)
