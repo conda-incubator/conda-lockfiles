@@ -22,6 +22,8 @@ conda env create -n ENV-NAME --env-spec=FORMAT --file=/path/to/lockfile
 conda export -n ENV-NAME --format=FORMAT --file=/path/to/lockfile
 ```
 
+Use **`--format`** with **`conda export`** (output format) and **`--env-spec`** with **`conda env create`** when you must name the input format; **`--env-spec`** is optional if conda recognizes the filename.
+
 Currently supported lockfile formats:
 
 - conda-lock.yml (`conda-lock-v1`)
@@ -65,9 +67,33 @@ conda env create --file=FILE --env-spec=FORMAT
 
 See [`conda env create` docs](https://docs.conda.io/projects/conda/en/stable/commands/env/create.html) for more details.
 
+### Examples
+
+**Export one `conda-lock` file with several platforms** (adjust platforms to what you need; exporting a platform different than the host may fail):
+
+```bash
+conda export --name myenv --format conda-lock-v1 \
+  --file conda-lock.yml \
+  --platform linux-64 --platform osx-64
+```
+
+**Create an environment from that lockfile**:
+
+```bash
+conda env create --name myenv --file conda-lock.yml
+# if the format is not auto-detected:
+conda env create --name myenv --file dev-lock.yml --env-spec=conda-lock-v1
+```
+
+**Pixi / rattler lock v6**:
+
+```bash
+conda export --name myenv --format pixi-lock-v6 --file pixi.lock
+conda env create --name myenv --file pixi.lock --env-spec=pixi-lock-v6
+```
 <!-- docs-index-content-end -->
 
-More information is available on our [documentation](https://conda-incubator.github.io/conda-lockfiles/).
+More information and example workflows are available on our online [documentation](https://conda-incubator.github.io/conda-lockfiles/).
 
 ## Contributing
 
