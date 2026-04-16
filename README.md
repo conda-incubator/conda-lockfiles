@@ -72,9 +72,12 @@ See [`conda env create` docs](https://docs.conda.io/projects/conda/en/stable/com
 **Export one `conda-lock` file with several platforms** (adjust platforms to what you need; exporting a platform different than the host may fail):
 
 ```bash
-conda export --name myenv --format conda-lock-v1 \
+conda export \
+  --name myenv \
+  --format conda-lock-v1 \
   --file conda-lock.yml \
-  --platform linux-64 --platform osx-64
+  --platform linux-64 \
+  --platform osx-64
 ```
 
 **Create an environment from that lockfile**:
