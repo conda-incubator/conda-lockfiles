@@ -117,4 +117,4 @@ done
 - This project is still in beta; please file bugs and feature requests [here](https://github.com/conda-incubator/conda-lockfiles)
 
 ## A Note about `conda-lock`
-The conda-lock command is a specific command that can be used to create conda-lock.yaml files.  It will need to be installed separately. Currently, the only additional functionality it provides is being able to produce a lock file from an environment.yaml file.
+The conda-lock command is a specific command that can be used to create conda-lock.yaml files.  It will need to be installed separately. Currently, the only additional functionality it provides is being able to produce a lock file from an environment.yaml file.  For more information, see [here](https://github.com/conda/conda-lock).
