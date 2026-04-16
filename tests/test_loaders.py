@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from conda.base.context import context
+from conda.plugins.types import EnvironmentFormat
 
 if TYPE_CHECKING:
     from conda.plugins.manager import CondaPluginManager
@@ -32,6 +34,55 @@ CONDA_LOCK_METADATA_MD5 = {
     "osx-arm64": "cda0ec640bc4698d0813a8fb459aee58",
     "win-64": "92b11b0b2120d563caa1629928122cee",
 }
+
+
+@pytest.mark.parametrize(
+    "format_name,expected_description",
+    [
+        (
+            conda_lock_v1.FORMAT,
+            "Multi-platform lockfile format with exact package versions",
+        ),
+        (
+            rattler_lock_v6.FORMAT,
+            "Rattler-based lockfile format from pixi",
+        ),
+    ],
+)
+def test_specifier_plugin_metadata(
+    plugin_manager: CondaPluginManager,
+    format_name: str,
+    expected_description: str,
+) -> None:
+    specifiers = plugin_manager.get_environment_specifiers()
+    specifier = specifiers.get(format_name)
+    assert specifier is not None
+    assert specifier.description == expected_description
+    assert specifier.environment_format == EnvironmentFormat.lockfile
+
+
+@pytest.mark.parametrize(
+    "format_name,expected_description",
+    [
+        (
+            conda_lock_v1.FORMAT,
+            "Multi-platform lockfile format with exact package versions",
+        ),
+        (
+            rattler_lock_v6.FORMAT,
+            "Rattler-based lockfile format from pixi",
+        ),
+    ],
+)
+def test_exporter_plugin_metadata(
+    plugin_manager: CondaPluginManager,
+    format_name: str,
+    expected_description: str,
+) -> None:
+    exporter = plugin_manager.get_environment_exporter_by_format(format_name)
+    assert exporter is not None
+    assert exporter.description == expected_description
+    assert exporter.environment_format == EnvironmentFormat.lockfile
 
 
 def test_create_environment_from_conda_lock_v1(
