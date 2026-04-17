@@ -360,10 +360,17 @@ class CondaLockV1Loader(EnvironmentSpecBase):
             self._validate_model()
         return tuple(self._model.metadata.platforms)
 
+    def env_for(self, platform: str) -> Environment:
+        """Return the Environment for a specific platform in the lockfile."""
+        if platform not in self.available_platforms:
+            raise ValueError(
+                f"Platform {platform!r} not in lockfile. "
+                f"Available platforms: {', '.join(self.available_platforms)}"
+            )
+        return conda_lock_v1_to_conda_env(self._model, platform=platform)
+
     @property
     def multiplatform_envs(self) -> Iterable[Environment]:
         """Yield one Environment per platform in the lockfile."""
-        if self._model is None:
-            self._validate_model()
-        for platform in self._model.metadata.platforms:
-            yield conda_lock_v1_to_conda_env(self._model, platform=platform)
+        for platform in self.available_platforms:
+            yield self.env_for(platform)

@@ -185,6 +185,18 @@ def test_available_platforms(loader) -> None:
     assert loader.available_platforms == EXPECTED_PLATFORMS
 
 
+@pytest.mark.parametrize("platform", EXPECTED_PLATFORMS)
+def test_env_for(loader, platform) -> None:
+    env = loader.env_for(platform)
+    assert env.platform == platform
+    assert env.explicit_packages
+
+
+def test_env_for_unknown_platform_raises(loader) -> None:
+    with pytest.raises(ValueError, match="not in lockfile"):
+        loader.env_for("not-a-real-platform")
+
+
 def test_multiplatform_envs(loader) -> None:
     envs = list(loader.multiplatform_envs)
     assert len(envs) == len(EXPECTED_PLATFORMS)

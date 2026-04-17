@@ -360,10 +360,17 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
             self._validate_model()
         return tuple(sorted(self._model.environments["default"].packages.keys()))
 
+    def env_for(self, platform: str) -> Environment:
+        """Return the Environment for a specific platform in the lockfile."""
+        if platform not in self.available_platforms:
+            raise ValueError(
+                f"Platform {platform!r} not in lockfile. "
+                f"Available platforms: {', '.join(self.available_platforms)}"
+            )
+        return rattler_lock_v6_to_conda_env(self._model, platform=platform)
+
     @property
     def multiplatform_envs(self) -> Iterable[Environment]:
         """Yield one Environment per platform in the lockfile."""
-        if self._model is None:
-            self._validate_model()
         for platform in self.available_platforms:
-            yield rattler_lock_v6_to_conda_env(self._model, platform=platform)
+            yield self.env_for(platform)
