@@ -185,8 +185,8 @@ def test_available_platforms(loader) -> None:
     assert loader.available_platforms == EXPECTED_PLATFORMS
 
 
-def test_envs(loader) -> None:
-    envs = list(loader.envs)
+def test_multiplatform_envs(loader) -> None:
+    envs = list(loader.multiplatform_envs)
     assert len(envs) == len(EXPECTED_PLATFORMS)
     assert tuple(e.platform for e in envs) == EXPECTED_PLATFORMS
     for env in envs:

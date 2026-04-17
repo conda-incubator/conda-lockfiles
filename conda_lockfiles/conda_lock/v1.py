@@ -361,7 +361,7 @@ class CondaLockV1Loader(EnvironmentSpecBase):
         return tuple(self._model.metadata.platforms)
 
     @property
-    def envs(self) -> Iterable[Environment]:
+    def multiplatform_envs(self) -> Iterable[Environment]:
         """Yield one Environment per platform in the lockfile."""
         if self._model is None:
             self._validate_model()

@@ -361,7 +361,7 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
         return tuple(sorted(self._model.environments["default"].packages.keys()))
 
     @property
-    def envs(self) -> Iterable[Environment]:
+    def multiplatform_envs(self) -> Iterable[Environment]:
         """Yield one Environment per platform in the lockfile."""
         if self._model is None:
             self._validate_model()
