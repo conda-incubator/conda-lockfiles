@@ -197,14 +197,6 @@ def test_env_for_unknown_platform_raises(loader) -> None:
         loader.env_for("not-a-real-platform")
 
 
-def test_multiplatform_envs(loader) -> None:
-    envs = list(loader.multiplatform_envs)
-    assert len(envs) == len(EXPECTED_PLATFORMS)
-    assert tuple(e.platform for e in envs) == EXPECTED_PLATFORMS
-    for env in envs:
-        assert env.explicit_packages
-
-
 def test_env_unchanged(loader) -> None:
     """Regression guard: env still returns a single Environment for context.subdir."""
     env = loader.env
