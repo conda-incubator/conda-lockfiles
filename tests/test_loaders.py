@@ -151,3 +151,50 @@ def test_create_environment_from_rattler_lock_v6(
     assert pkg.license == "ONLY_IN_LOCKFILE"
     assert pkg.size == 122968
     assert pkg.timestamp == 1742727099.393
+
+
+EXPECTED_PLATFORMS = ("linux-64", "osx-64", "osx-arm64", "win-64")
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(
+            (
+                conda_lock_v1.CondaLockV1Loader,
+                CONDA_LOCK_METADATA_DIR / conda_lock_v1.CONDA_LOCK_FILE,
+            ),
+            id="conda-lock-v1",
+        ),
+        pytest.param(
+            (
+                rattler_lock_v6.RattlerLockV6Loader,
+                PIXI_METADATA_DIR / rattler_lock_v6.PIXI_LOCK_FILE,
+            ),
+            id="rattler-lock-v6",
+        ),
+    ],
+)
+def loader(request):
+    cls, path = request.param
+    spec = cls(path)
+    spec.can_handle()
+    return spec
+
+
+def test_available_platforms(loader) -> None:
+    assert loader.available_platforms == EXPECTED_PLATFORMS
+
+
+def test_envs(loader) -> None:
+    envs = list(loader.envs)
+    assert len(envs) == len(EXPECTED_PLATFORMS)
+    assert tuple(e.platform for e in envs) == EXPECTED_PLATFORMS
+    for env in envs:
+        assert env.explicit_packages
+
+
+def test_env_unchanged(loader) -> None:
+    """Regression guard: env still returns a single Environment for context.subdir."""
+    env = loader.env
+    assert env.platform == context.subdir
+    assert env.explicit_packages

@@ -352,3 +352,18 @@ class CondaLockV1Loader(EnvironmentSpecBase):
             return conda_lock_v1_to_conda_env(self._model)
         except ValueError as e:
             raise CondaValueError(f"\n\nUnable to create environment: {e}") from e
+
+    @property
+    def available_platforms(self) -> tuple[str, ...]:
+        """Platforms declared in this lockfile."""
+        if self._model is None:
+            self._validate_model()
+        return tuple(self._model.metadata.platforms)
+
+    @property
+    def envs(self) -> Iterable[Environment]:
+        """Yield one Environment per platform in the lockfile."""
+        if self._model is None:
+            self._validate_model()
+        for platform in self._model.metadata.platforms:
+            yield conda_lock_v1_to_conda_env(self._model, platform=platform)
