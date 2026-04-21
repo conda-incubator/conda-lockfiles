@@ -1,113 +1,84 @@
 # Format names and aliases
 
-`conda-lockfiles` exposes each lockfile format under a version-pinned
-canonical name and, where it makes sense, a shorter unversioned alias.
-The two serve different purposes: canonical names are a stable contract,
-aliases are convenience. This document describes which is which today,
-how the alias tracks future format versions, and how to migrate an
-existing lockfile when the alias flips.
+Each lockfile format has a version-pinned canonical name and, when a
+short form reads better at the command line, an unversioned alias.
 
-## Format names today
+## Names today
 
-| Canonical name   | Unversioned alias | Description                                       |
-| ---------------- | ----------------- | ------------------------------------------------- |
-| `conda-lock-v1`  | `conda-lock`      | Multi-platform `conda-lock.yml` / `.yaml` files.  |
-| `rattler-lock-v6`| `pixi`            | `pixi.lock` files produced by the rattler engine. |
+| Canonical name    | Unversioned alias | Files                                |
+| ----------------- | ----------------- | ------------------------------------ |
+| `conda-lock-v1`   | `conda-lock`      | `conda-lock.yml`, `conda-lock.yaml`  |
+| `rattler-lock-v6` | `pixi`            | `pixi.lock`                          |
 
-`rattler-lock-v6` additionally carries `pixi-lock-v6` as a second
-version-pinned alias for backwards compatibility with docs and tooling
-that reference the `pixi-lock-v*` naming.
+`rattler-lock-v6` also accepts `pixi-lock-v6` for compatibility with
+docs and tooling that use the `pixi-lock-v*` naming.
 
-## Canonical vs. unversioned: what the two promise
+## What the two names mean
 
-- **Canonical names (`conda-lock-v1`, `rattler-lock-v6`)** are the stable
-  contract. They identify one specific file-format version and are
-  guaranteed not to move under you: `conda-lock-v1` will always mean the v1
-  spec, even after `conda-lock-v2` ships. Pin these when you care about
-  reproducibility or interoperability with external tooling.
-- **Unversioned aliases (`conda-lock`, `pixi`)** are convenience. They
-  track whatever version is current-stable in the conda-lockfiles release
-  you have installed. Use these in day-to-day commands and docs where the
-  latest stable format is what you want.
+The canonical names (`conda-lock-v1`, `rattler-lock-v6`) identify one
+specific file-format version and never change meaning. `conda-lock-v1`
+will still be `conda-lock-v1` after `conda-lock-v2` ships. Use these in
+committed lockfiles, CI pins, and anywhere a file is exchanged with
+another tool.
 
-If you have a `pixi.lock` file and type `conda export --format pixi`, the
-current release writes `rattler-lock-v6`. After a future release flips the
-alias to, say, `rattler-lock-v7`, the same command writes v7 instead. The
-tutorial below walks through re-exporting an existing file at a new format
-version.
+The unversioned aliases (`conda-lock`, `pixi`) resolve to whichever
+version is current-stable in the installed conda-lockfiles release. Use
+these when you want the latest format and do not need the invocation to
+outlive the next release.
 
-## Alias bump policy
+Concretely: `conda export --format pixi` writes `rattler-lock-v6` today.
+If a later release makes `rattler-lock-v7` current-stable, the same
+command writes v7.
 
-When the current-stable format version changes (e.g. `rattler-lock-v6`
-→ `rattler-lock-v7`), conda-lockfiles rolls the unversioned alias over a
-two-release window so that users who type the short form are warned before
-the output changes:
+## Bump policy
 
-1. **Release _N_ — new version ships pinned.** The new format is added
-   under its canonical name (e.g. `rattler-lock-v7`). The unversioned alias
-   (`pixi`) still resolves to the previous version (`rattler-lock-v6`). A
-   `PendingDeprecationWarning` is emitted on the alias resolution path
-   noting the release in which the flip is planned.
-2. **Release _N+1_ — alias flip.** The unversioned alias is re-pointed to
-   the new canonical version. Users who type the pinned old name
-   (`rattler-lock-v6`) keep getting the old format without warnings. Users
-   who type the pinned new name (`rattler-lock-v7`) or the unversioned
-   alias (`pixi`) get the new format.
-3. **Release _N+K_ — deprecation and removal.** When usage of the old
-   pinned name has dropped off, it enters conda's standard deprecation
-   cycle (`conda.deprecations.DeprecationHandler`) with a clearly stated
-   removal target release.
+When a new version of a format reaches stable, the alias is rolled over
+two releases so the flip is never silent:
 
-Canonical names only participate in step 3. They never silently change
-meaning.
+1. The new canonical name (`rattler-lock-v7`) ships alongside the old
+   one. The unversioned alias (`pixi`) still points at the old version.
+   Alias resolution emits a `PendingDeprecationWarning` naming the
+   release in which the flip lands.
+2. The next release flips the alias to the new canonical name. The old
+   canonical name keeps working without warnings.
+3. At a later release the old canonical name enters the standard
+   `conda.deprecations.DeprecationHandler` cycle with a removal target.
 
-### Maintainer checklist for a version bump
+Canonical names only participate in step 3.
 
-Pre-bump:
+### Maintainer checklist
 
-- [ ] Add the new format module under its canonical name and register it
-      in `conda_lockfiles/plugin.py` alongside the existing one.
-- [ ] Keep the existing unversioned alias pointing at the previous
-      canonical name.
-- [ ] Wire a `PendingDeprecationWarning` on unversioned-alias resolution
-      that names the upcoming flip release.
-- [ ] Add tests that (a) both canonical names resolve, and (b) the
-      unversioned alias still resolves to the previous format.
-- [ ] Update this document's "Format names today" table with a row for the
-      new canonical name, and add a note that the unversioned alias flip
-      is scheduled for release _N+1_.
+When shipping a new format version:
 
-Bump release:
+- Register it under its canonical name in `conda_lockfiles/plugin.py`.
+- Leave the unversioned alias pointing at the previous canonical name.
+- Emit a `PendingDeprecationWarning` on alias resolution naming the
+  flip release.
+- Add tests covering both canonical names and confirming the alias
+  still resolves to the previous format.
+- Update the "Names today" table.
 
-- [ ] Move the unversioned alias to the new canonical format.
-- [ ] Swap the `PendingDeprecationWarning` for a release-note entry
-      describing the flip.
-- [ ] Update this document: the unversioned alias now tracks the new
-      version; the previous version stays supported under its pinned name.
+When flipping the alias:
 
-Deprecation release:
+- Point the unversioned alias at the new canonical name.
+- Drop the `PendingDeprecationWarning`; call out the flip in the
+  release notes.
+- Update the "Names today" table.
 
-- [ ] Mark the old canonical name via `conda.deprecations.deprecated` with
-      a concrete removal target.
-- [ ] Update this document to list the name as deprecated.
+When retiring the old version:
 
-## Tutorial: re-exporting an existing lockfile at a new format version
+- Mark the old canonical name with `conda.deprecations.deprecated` and
+  a removal target.
+- Update the "Names today" table.
 
-If a future release flips `pixi` from `rattler-lock-v6` to
-`rattler-lock-v7`, an existing `pixi.lock` on disk is still valid — nothing
-rewrites files on your behalf. To move it to the new format, re-export
-from an environment that matches the lockfile.
+## Re-exporting a lockfile at a new format version
 
-Re-create the environment from the existing file:
+Existing `pixi.lock` files on disk remain valid after an alias flip;
+nothing rewrites them. To upgrade one, re-create the environment from
+the existing file and re-export at the new format:
 
 ```shell
 conda env create --name lockfile-upgrade --file pixi.lock
-```
-
-Export it at the new format. Pin the new version explicitly so the command
-keeps doing the same thing regardless of future alias flips:
-
-```shell
 conda export \
   --name lockfile-upgrade \
   --format rattler-lock-v7 \
@@ -117,27 +88,6 @@ conda export \
   --platform win-64
 ```
 
-The same pattern applies to `conda-lock-v1` → `conda-lock-v2` once that
-version exists; substitute the canonical names accordingly.
-
-If you want the short form during an alias-flip window:
-
-```shell
-conda export --name lockfile-upgrade --format pixi --file pixi.lock ...
-```
-
-This writes whatever the current release of conda-lockfiles treats as
-`pixi`-stable. The current mapping is recorded in the "Format names today"
-table above.
-
-## Picking the right name for your situation
-
-- **Committing lockfiles to a repo or pinning in CI.** Use the canonical
-  name (`conda-lock-v1`, `rattler-lock-v6`). The invocation is stable
-  across conda-lockfiles releases.
-- **Ad-hoc commands, docs, READMEs.** Use the unversioned alias
-  (`conda-lock`, `pixi`). The short form is what most users recognise and
-  it keeps tracking the current-stable format.
-- **Tooling that exchanges files with `conda-lock` or `pixi` directly.**
-  Use the canonical name matching the file-format version the other tool
-  understands.
+Pin the new canonical name in the re-export so the command is
+unaffected by future alias flips. The same pattern works for
+`conda-lock-v1` → a future `conda-lock-v2`.

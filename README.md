@@ -26,15 +26,13 @@ Use **`--format`** with **`conda export`** (output format) and **`--env-spec`** 
 
 Currently supported lockfile formats:
 
-- `conda-lock.yml` — canonical name `conda-lock-v1`, short alias `conda-lock`.
-- `pixi.lock` — canonical name `rattler-lock-v6`, short aliases `pixi` and `pixi-lock-v6`.
+- `conda-lock.yml` / `conda-lock.yaml` — `conda-lock-v1` (alias: `conda-lock`)
+- `pixi.lock` — `rattler-lock-v6` (aliases: `pixi`, `pixi-lock-v6`)
 
-The canonical `-v1` / `-v6` names are the stable contract and never change
-meaning. The short aliases (`conda-lock`, `pixi`) track the current-stable
-format version of each file kind. See [format aliases and bump
+The version-pinned names (`-v1`, `-v6`) never change meaning. The short
+aliases track the current-stable version. See [format aliases and bump
 policy](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html)
-for the full story and for how to re-export an existing file at a new
-format version.
+for when to use which.
 
 ## Installation
 
@@ -102,11 +100,9 @@ conda export --name myenv --format pixi --file pixi.lock
 conda env create --name myenv --file pixi.lock --env-spec=pixi
 ```
 
-`pixi` here is the short alias for the current-stable format
-(`rattler-lock-v6`). When you commit lockfiles or pin exact behaviour in
-CI, prefer the canonical name (`--format rattler-lock-v6`,
-`--env-spec=rattler-lock-v6`) so later conda-lockfiles releases don't
-change the written format under you.
+`pixi` resolves to `rattler-lock-v6` today. Use `--format
+rattler-lock-v6` / `--env-spec=rattler-lock-v6` in committed lockfiles
+and CI so a future alias flip doesn't change the written format.
 <!-- docs-index-content-end -->
 
 More information and example workflows are available on our online [documentation](https://conda-incubator.github.io/conda-lockfiles/).

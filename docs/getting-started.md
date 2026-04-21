@@ -24,11 +24,9 @@ conda env create --name my-env --file dev.yml --env-spec=conda-lock-v1
 ```
 
 :::{tip}
-`conda-lock` and `pixi` are short aliases for the current-stable
-format versions (`conda-lock-v1` and `rattler-lock-v6` respectively). The
-version-pinned names are the stable contract — prefer them when you commit
-lockfiles or need reproducible behaviour across conda-lockfiles releases.
-See [format aliases and bump policy](format-aliases.md).
+`conda-lock` and `pixi` resolve to `conda-lock-v1` and `rattler-lock-v6`
+today. Use the version-pinned names in committed lockfiles and CI. See
+[format aliases and bump policy](format-aliases.md).
 :::
 
 :::{warning}
