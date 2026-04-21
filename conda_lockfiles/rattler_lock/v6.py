@@ -30,8 +30,11 @@ if TYPE_CHECKING:
 #: The name of the rattler lock v6 format.
 FORMAT: Final = "rattler-lock-v6"
 
-#: Aliases for the rattler lock v6 format.
-ALIASES: Final = ("pixi-lock-v6",)
+#: Aliases for the rattler lock v6 format. ``pixi`` is the unversioned
+#: convenience alias and tracks the current stable ``rattler-lock-v*``
+#: format; ``pixi-lock-v6`` is the version-pinned alias. See
+#: ``docs/format-aliases.md`` for the alias policy.
+ALIASES: Final = ("pixi-lock-v6", "pixi")
 
 #: The filename of the rattler lock v6 format.
 PIXI_LOCK_FILE: Final = "pixi.lock"

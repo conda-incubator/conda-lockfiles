@@ -85,6 +85,44 @@ def test_exporter_plugin_metadata(
     assert exporter.environment_format == EnvironmentFormat.lockfile
 
 
+@pytest.mark.parametrize(
+    "alias,canonical_format",
+    [
+        ("conda-lock", conda_lock_v1.FORMAT),
+        ("pixi-lock-v6", rattler_lock_v6.FORMAT),
+        ("pixi", rattler_lock_v6.FORMAT),
+    ],
+)
+def test_specifier_alias_resolves(
+    plugin_manager: CondaPluginManager,
+    alias: str,
+    canonical_format: str,
+) -> None:
+    """Aliases resolve to the same plugin as the canonical format name."""
+    specifiers = plugin_manager.get_environment_specifiers()
+    assert alias in specifiers
+    assert specifiers[alias].name == canonical_format
+
+
+@pytest.mark.parametrize(
+    "alias,canonical_format",
+    [
+        ("conda-lock", conda_lock_v1.FORMAT),
+        ("pixi-lock-v6", rattler_lock_v6.FORMAT),
+        ("pixi", rattler_lock_v6.FORMAT),
+    ],
+)
+def test_exporter_alias_resolves(
+    plugin_manager: CondaPluginManager,
+    alias: str,
+    canonical_format: str,
+) -> None:
+    """`conda export --format <alias>` resolves to the canonical exporter."""
+    exporter = plugin_manager.get_environment_exporter_by_format(alias)
+    assert exporter is not None
+    assert exporter.name == canonical_format
+
+
 def test_create_environment_from_conda_lock_v1(
     plugin_manager: CondaPluginManager,
 ) -> None:
