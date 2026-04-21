@@ -352,3 +352,19 @@ class RattlerLockV6Loader(EnvironmentSpecBase):
             return rattler_lock_v6_to_conda_env(self._model)
         except ValueError as e:
             raise CondaValueError(f"\n\nUnable to create environment: {e}") from e
+
+    @property
+    def available_platforms(self) -> tuple[str, ...]:
+        """Platforms declared in this lockfile."""
+        if self._model is None:
+            self._validate_model()
+        return tuple(sorted(self._model.environments["default"].packages.keys()))
+
+    def env_for(self, platform: str) -> Environment:
+        """Return the Environment for a specific platform in the lockfile."""
+        if platform not in self.available_platforms:
+            raise ValueError(
+                f"Platform {platform!r} not in lockfile. "
+                f"Available platforms: {', '.join(self.available_platforms)}"
+            )
+        return rattler_lock_v6_to_conda_env(self._model, platform=platform)
