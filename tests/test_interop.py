@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pytest
@@ -41,18 +40,16 @@ INTEROP_PACKAGE = "zlib"
 
 
 @pytest.fixture
-def external_tool(request: pytest.FixtureRequest) -> str:
-    """Resolve an external tool binary on PATH or skip.
+def require_tool() -> Callable[[str], str]:
+    """Return a helper that resolves a tool on PATH or skips the test."""
 
-    Parametrized tests request it indirectly via ``indirect=["external_tool"]``
-    passing the tool name as the fixture value; the fixture returns the
-    absolute path to the binary or skips the test when the tool is missing.
-    """
-    tool = request.param
-    path = shutil.which(tool)
-    if path is None:
-        pytest.skip(f"{tool} not on PATH")
-    return path
+    def _require(tool: str) -> str:
+        path = shutil.which(tool)
+        if path is None:
+            pytest.skip(f"{tool} not on PATH")
+        return path
+
+    return _require
 
 
 def run_subprocess(argv: list[str], *, what: str) -> None:
@@ -96,68 +93,59 @@ def consume_with_conda_lock(tool: str, lockfile: Path, workdir: Path) -> Path:
     return prefix
 
 
-@dataclass(frozen=True)
-class InteropCase:
-    """One export-then-consume scenario for a single lockfile format."""
-
-    id: str
-    format: str
-    # Filename to write the export to. Some consumers care about the
-    # extension: conda-lock's unified-format parser requires
-    # ``.conda-lock.yml``, pixi wants the file literally named ``pixi.lock``.
-    filename: str
-    tool: str
-    consume: Callable[[str, "Path", "Path"], "Path"]
-
-
-CASES = [
-    InteropCase(
-        id="pixi-consumes-rattler-lock-v6",
-        format=rattler_lock_v6.FORMAT,
-        filename=rattler_lock_v6.PIXI_LOCK_FILE,
-        tool="pixi",
-        consume=consume_with_pixi,
-    ),
-    InteropCase(
-        id="conda-lock-consumes-conda-lock-v1",
-        format=conda_lock_v1.FORMAT,
-        filename="interop.conda-lock.yml",
-        tool="conda-lock",
-        consume=consume_with_conda_lock,
-    ),
-]
-
-
+# Each case: (lockfile format, filename to export to, consumer tool binary,
+# consumer callable that returns the prefix to inspect). Some consumers care
+# about the filename extension: conda-lock's unified-format parser requires
+# ``.conda-lock.yml``, pixi wants the file literally named ``pixi.lock``.
 @pytest.mark.parametrize(
-    "case,external_tool",
-    [pytest.param(case, case.tool, id=case.id) for case in CASES],
-    indirect=["external_tool"],
+    "lock_format,filename,tool_name,consume",
+    [
+        pytest.param(
+            rattler_lock_v6.FORMAT,
+            rattler_lock_v6.PIXI_LOCK_FILE,
+            "pixi",
+            consume_with_pixi,
+            id="pixi-consumes-rattler-lock-v6",
+        ),
+        pytest.param(
+            conda_lock_v1.FORMAT,
+            "interop.conda-lock.yml",
+            "conda-lock",
+            consume_with_conda_lock,
+            id="conda-lock-consumes-conda-lock-v1",
+        ),
+    ],
 )
 def test_external_tool_consumes_our_export(
     tmp_env: TmpEnvFixture,
     conda_cli: CondaCLIFixture,
     tmp_path: Path,
-    case: InteropCase,
-    external_tool: str,
+    require_tool: Callable[[str], str],
+    lock_format: str,
+    filename: str,
+    tool_name: str,
+    consume: Callable[[str, Path, Path], Path],
 ) -> None:
     """Our export must be installable by the tool that owns the format."""
-    workdir = tmp_path / case.id
+    tool = require_tool(tool_name)
+
+    workdir = tmp_path / tool_name
     workdir.mkdir()
-    lockfile = workdir / case.filename
+    lockfile = workdir / filename
 
     with tmp_env(INTEROP_PACKAGE) as prefix:
         out, err, rc = conda_cli(
             "export",
             f"--prefix={prefix}",
-            f"--format={case.format}",
+            f"--format={lock_format}",
             f"--file={lockfile}",
         )
         assert rc == 0, (out, err)
 
-    consumed_prefix = case.consume(external_tool, lockfile, workdir)
+    consumed_prefix = consume(tool, lockfile, workdir)
 
     conda_meta = consumed_prefix / "conda-meta"
-    assert conda_meta.is_dir(), f"{case.tool} did not create {conda_meta}"
+    assert conda_meta.is_dir(), f"{tool_name} did not create {conda_meta}"
     assert any(
         entry.name.startswith(f"{INTEROP_PACKAGE}-") and entry.suffix == ".json"
         for entry in conda_meta.iterdir()
