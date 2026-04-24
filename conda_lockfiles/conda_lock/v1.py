@@ -104,6 +104,28 @@ class CondaLockV1TimeMetadata(BaseModel):
     created_at: str
 
 
+class CondaLockV1CustomMetadata(BaseModel):
+    """Custom metadata block for the conda-lock v1 lockfile.
+
+    CEP 37 specifies ``custom_metadata`` as ``dict[str, str]`` (free-form
+    key-value string pairs), so on the wire this is still a flat string
+    map. We model it as a typed ``BaseModel`` with a couple of well-known
+    fields plus ``extra="allow"`` so callers can round-trip arbitrary
+    extra keys without us losing track of them.
+
+    Structured payloads (e.g. the :data:`REQUESTED_SPECS_KEY` list of
+    ``MatchSpec`` strings) are JSON-encoded into a single string to
+    satisfy the ``dict[str, str]`` constraint required for interop with
+    ``conda-lock`` (whose pydantic model is ``StrictModel`` and rejects
+    non-string values here).
+    """
+
+    model_config = {"extra": "allow"}
+
+    created_by: str | None = None
+    requested_specs: str | None = None
+
+
 class CondaLockV1Metadata(BaseModel):
     """Metadata section of the conda-lock v1 lockfile."""
 
@@ -112,10 +134,7 @@ class CondaLockV1Metadata(BaseModel):
     platforms: Annotated[list[str], Field(min_length=1)]
     sources: Annotated[list[str], Field(default_factory=list)]
     time_metadata: CondaLockV1TimeMetadata | None = None
-    # Free-form ``dict[str, str]`` per CEP 37. Values must be strings, so
-    # structured payloads (e.g. the ``requested_specs`` list) are stored as
-    # JSON-encoded strings. See :data:`REQUESTED_SPECS_KEY`.
-    custom_metadata: dict[str, str] | None = None
+    custom_metadata: CondaLockV1CustomMetadata | None = None
 
 
 class CondaLockV1(BaseModel):
@@ -230,11 +249,12 @@ def conda_lock_v1_from_conda_envs(envs: Iterable[Environment]) -> CondaLockV1:
     requested: set[str] = set()
     for e in env_list:
         requested.update(requested_specs_from_prefix(e.prefix))
-    custom_metadata: dict[str, str] = {
-        "created_by": f"conda-lockfiles {__version__}",
-    }
-    if requested:
-        custom_metadata[REQUESTED_SPECS_KEY] = json.dumps(sorted(requested))
+    custom_metadata = CondaLockV1CustomMetadata(
+        created_by=f"conda-lockfiles {__version__}",
+        requested_specs=(
+            json.dumps(sorted(requested)) if requested else None
+        ),
+    )
 
     metadata = CondaLockV1Metadata(
         content_hash={},  # Empty for now, could be computed later
@@ -260,9 +280,9 @@ def _requested_packages_from_metadata(
     with a warning; ``Environment.__post_init__`` would otherwise reject
     the whole object.
     """
-    if not metadata.custom_metadata:
+    if metadata.custom_metadata is None:
         return []
-    raw = metadata.custom_metadata.get(REQUESTED_SPECS_KEY)
+    raw = metadata.custom_metadata.requested_specs
     if not raw:
         return []
     try:
