@@ -251,9 +251,7 @@ def conda_lock_v1_from_conda_envs(envs: Iterable[Environment]) -> CondaLockV1:
         requested.update(requested_specs_from_prefix(e.prefix))
     custom_metadata = CondaLockV1CustomMetadata(
         created_by=f"conda-lockfiles {__version__}",
-        requested_specs=(
-            json.dumps(sorted(requested)) if requested else None
-        ),
+        requested_specs=(json.dumps(sorted(requested)) if requested else None),
     )
 
     metadata = CondaLockV1Metadata(
