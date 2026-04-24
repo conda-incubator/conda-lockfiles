@@ -18,8 +18,16 @@ conda create --name my-env --file dev.conda-lock.yml
 conda env create --name my-env  --file pixi.lock
 
 # If the format is not detected from the filename:
+conda env create --name my-env --file dev.yml --env-spec=conda-lock
+# or, equivalently, using the canonical version-pinned name:
 conda env create --name my-env --file dev.yml --env-spec=conda-lock-v1
 ```
+
+:::{tip}
+`conda-lock` and `pixi` resolve to `conda-lock-v1` and `rattler-lock-v6`
+today. Use the version-pinned names in committed lockfiles and CI. See
+[format aliases and bump policy](format-aliases.md).
+:::
 
 :::{warning}
 Only version 6 format of the pixi lock file is supported. Earlier versions may cause errors.
@@ -69,7 +77,9 @@ conda create --name python-env --yes python
 it's possible to export it to a lockfile using the `win-64` platform with the following command:
 
 ```shell
-conda export --name python-env --format pixi-lock-v6 --platform win-64 --file pixi.lock
+conda export --name python-env --format pixi --platform win-64 --file pixi.lock
+# or with the version-pinned name:
+conda export --name python-env --format rattler-lock-v6 --platform win-64 --file pixi.lock
 ```
 
 :::{warning}
