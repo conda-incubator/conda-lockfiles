@@ -79,6 +79,10 @@ pytest = "7.4.3.*"
 pytest-mock = "3.12.0.*"
 pre-commit = "*"
 pytest-cov = ">=6.1.1,<7"
+# Used by cross-tool interop tests (tests/test_interop.py, marker ``interop``).
+# Pixi is provided by the ambient setup-pixi action, only conda-lock needs
+# to land in the test env itself.
+conda-lock = "*"
 
 [tool.pixi.feature.py310.dependencies]
 python = "3.10.*"
@@ -126,6 +130,9 @@ addopts = [
   "--strict-markers",
   "--tb=native",
   "-vv",
+]
+markers = [
+  "interop: cross-tool interop tests that invoke pixi or conda-lock as consumers of our exported lockfiles (skipped when the external tool is not on PATH)",
 ]
 
 [tool.ruff]
