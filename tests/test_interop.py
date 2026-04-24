@@ -52,66 +52,23 @@ def require_tool() -> Callable[[str], str]:
     return _require
 
 
-def run_subprocess(argv: list[str], *, what: str) -> None:
-    """Run ``argv``, failing the test with stdout/stderr on a non-zero exit."""
-    result = subprocess.run(argv, capture_output=True, text=True)
-    assert result.returncode == 0, (
-        f"{what} failed\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
-    )
-
-
-def consume_with_pixi(tool: str, lockfile: Path, workdir: Path) -> Path:
-    """Install the lockfile with pixi, return the prefix pixi created.
-
-    pixi has no "install this lockfile at this prefix" mode, so we drop a
-    minimal pixi.toml that matches the exported lockfile next to it and run
-    ``pixi install --frozen`` which refuses to proceed on drift.
-    """
-    (workdir / "pixi.toml").write_text(
-        "[workspace]\n"
-        'name = "interop"\n'
-        'channels = ["conda-forge"]\n'
-        'platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]\n'
-        "\n"
-        "[dependencies]\n"
-        f'{INTEROP_PACKAGE} = "*"\n'
-    )
-    run_subprocess(
-        [tool, "install", "--frozen", "--manifest-path", str(workdir / "pixi.toml")],
-        what="pixi install --frozen",
-    )
-    return workdir / ".pixi" / "envs" / "default"
-
-
-def consume_with_conda_lock(tool: str, lockfile: Path, workdir: Path) -> Path:
-    """Install the lockfile with conda-lock, return the target prefix."""
-    prefix = workdir / "consumed"
-    run_subprocess(
-        [tool, "install", "--prefix", str(prefix), str(lockfile)],
-        what="conda-lock install",
-    )
-    return prefix
-
-
-# Each case: (lockfile format, filename to export to, consumer tool binary,
-# consumer callable that returns the prefix to inspect). Some consumers care
-# about the filename extension: conda-lock's unified-format parser requires
-# ``.conda-lock.yml``, pixi wants the file literally named ``pixi.lock``.
+# Each case: (lockfile format, export filename, consumer tool binary).
+# Filenames matter: conda-lock's unified-format parser requires the
+# ``.conda-lock.yml`` double extension; pixi wants the file literally
+# named ``pixi.lock``.
 @pytest.mark.parametrize(
-    "lock_format,filename,tool_name,consume",
+    "lock_format,filename,tool_name",
     [
         pytest.param(
             rattler_lock_v6.FORMAT,
             rattler_lock_v6.PIXI_LOCK_FILE,
             "pixi",
-            consume_with_pixi,
             id="pixi-consumes-rattler-lock-v6",
         ),
         pytest.param(
             conda_lock_v1.FORMAT,
             "interop.conda-lock.yml",
             "conda-lock",
-            consume_with_conda_lock,
             id="conda-lock-consumes-conda-lock-v1",
         ),
     ],
@@ -124,7 +81,6 @@ def test_external_tool_consumes_our_export(
     lock_format: str,
     filename: str,
     tool_name: str,
-    consume: Callable[[str, Path, Path], Path],
 ) -> None:
     """Our export must be installable by the tool that owns the format."""
     tool = require_tool(tool_name)
@@ -133,6 +89,7 @@ def test_external_tool_consumes_our_export(
     workdir.mkdir()
     lockfile = workdir / filename
 
+    # Export a small env via our plugin.
     with tmp_env(INTEROP_PACKAGE) as prefix:
         out, err, rc = conda_cli(
             "export",
@@ -142,7 +99,39 @@ def test_external_tool_consumes_our_export(
         )
         assert rc == 0, (out, err)
 
-    consumed_prefix = consume(tool, lockfile, workdir)
+    # Hand the lockfile to the consumer tool. Invocation differs per tool
+    # because the tools expose very different install interfaces: pixi
+    # installs a workspace (manifest + lockfile) in --frozen mode, while
+    # conda-lock installs a lockfile directly into a prefix.
+    if tool_name == "pixi":
+        (workdir / "pixi.toml").write_text(
+            "[workspace]\n"
+            'name = "interop"\n'
+            'channels = ["conda-forge"]\n'
+            'platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]\n'
+            "\n"
+            "[dependencies]\n"
+            f'{INTEROP_PACKAGE} = "*"\n'
+        )
+        argv = [
+            tool,
+            "install",
+            "--frozen",
+            "--manifest-path",
+            str(workdir / "pixi.toml"),
+        ]
+        consumed_prefix = workdir / ".pixi" / "envs" / "default"
+    elif tool_name == "conda-lock":
+        consumed_prefix = workdir / "consumed"
+        argv = [tool, "install", "--prefix", str(consumed_prefix), str(lockfile)]
+    else:
+        raise AssertionError(f"unhandled tool {tool_name!r}")
+
+    result = subprocess.run(argv, capture_output=True, text=True)
+    assert result.returncode == 0, (
+        f"{tool_name} install failed\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
 
     conda_meta = consumed_prefix / "conda-meta"
     assert conda_meta.is_dir(), f"{tool_name} did not create {conda_meta}"
