@@ -27,7 +27,7 @@ New to `conda-lockfiles`? Start here to learn the essentials
 :::{grid-item-card} 🏷️ Format aliases
 :link: format-aliases
 :link-type: doc
-Canonical names vs. short aliases, bump policy, re-export tutorial
+Canonical names vs. short aliases, re-export tutorial
 :::
 
 :::{grid-item-card} 💡 Motivation and vision
@@ -44,4 +44,12 @@ Read about why `conda-lockfiles` exists and when you should use it
 getting-started
 format-aliases
 motivation
+```
+
+```{toctree}
+:caption: Developer
+:hidden:
+
+developer/contributing
+developer/maintaining
 ```

@@ -30,8 +30,8 @@ Currently supported lockfile formats:
 - `pixi.lock` — `rattler-lock-v6` (aliases: `pixi`, `pixi-lock-v6`)
 
 The version-pinned names (`-v1`, `-v6`) never change meaning. The short
-aliases track the current-stable version. See [format aliases and bump
-policy](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html)
+aliases track the current-stable version. See [format
+aliases](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html)
 for when to use which.
 
 ## Installation
