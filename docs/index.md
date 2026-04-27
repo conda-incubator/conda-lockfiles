@@ -24,6 +24,12 @@ Please submit bug reports or feature requests [here](https://github.com/conda-in
 New to `conda-lockfiles`? Start here to learn the essentials
 :::
 
+:::{grid-item-card} 🏷️ Format aliases
+:link: format-aliases
+:link-type: doc
+Canonical names vs. short aliases, re-export tutorial
+:::
+
 :::{grid-item-card} 💡 Motivation and vision
 :link: motivation
 :link-type: doc
@@ -36,5 +42,14 @@ Read about why `conda-lockfiles` exists and when you should use it
 :hidden:
 
 getting-started
+format-aliases
 motivation
+```
+
+```{toctree}
+:caption: Developer
+:hidden:
+
+developer/contributing
+developer/maintaining
 ```

@@ -33,8 +33,10 @@ if TYPE_CHECKING:
 #: The name of the conda-lock v1 format.
 FORMAT: Final = "conda-lock-v1"
 
-#: Aliases for the conda-lock v1 format.
-ALIASES: Final = ()
+#: Aliases for the conda-lock v1 format. ``conda-lock`` is the unversioned
+#: convenience alias and tracks the current stable ``conda-lock-v*``
+#: format. See ``docs/format-aliases.md`` for the alias policy.
+ALIASES: Final = ("conda-lock",)
 
 #: The filename of the conda-lock v1 format.
 CONDA_LOCK_FILE: Final = "conda-lock.yml"
