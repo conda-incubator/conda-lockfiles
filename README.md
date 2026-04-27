@@ -28,17 +28,16 @@ conda create --name ENV-NAME --format FORMAT --file /path/to/lockfile
 conda export --name ENV-NAME --format FORMAT --file /path/to/lockfile
 ```
 
-> [!NOTE]
-> If conda recognizes your lockfile's format, the `--format` flag is optional with `conda create`.
->
-> Currently supported lockfile formats are:
->
-> - `conda-lock.yml` / `conda-lock.yaml` — `conda-lock-v1` (alias: `conda-lock`)
-> - `pixi.lock` — `rattler-lock-v6` (aliases: `pixi`, `pixi-lock-v6`)
->
-> The version-pinned names (such as `-v1`, `-v6`) never change meaning. The short
-> aliases track the current-stable version. For information on when to use which name,
-> see [format aliases](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html).
+If conda recognizes your lockfile's format, the `--format` flag is optional with `conda create`.
+
+Currently supported lockfile formats are:
+
+- `conda-lock.yml` / `conda-lock.yaml` — `conda-lock-v1` (alias: `conda-lock`)
+- `pixi.lock` — `rattler-lock-v6` (aliases: `pixi`, `pixi-lock-v6`)
+
+The version-pinned names (such as `-v1`, `-v6`) never change meaning. The short
+aliases track the current-stable version. For information on when to use which name,
+see [format aliases](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html).
 
 ## Installation
 
