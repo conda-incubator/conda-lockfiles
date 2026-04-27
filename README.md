@@ -29,7 +29,8 @@ conda export --name ENV-NAME --format FORMAT --file /path/to/lockfile
 ```
 
 > [!NOTE]
-> The `--format` flag is optional with `conda create` if conda recognizes your lockfile's file format.
+> If conda recognizes your lockfile's format, the `--format` flag is optional with `conda create`.
+>
 > Currently supported lockfile formats are:
 >
 > - `conda-lock.yml` / `conda-lock.yaml` — `conda-lock-v1` (alias: `conda-lock`)
@@ -72,7 +73,7 @@ conda create --file FILE
 If conda is unable to determine the file format:
 
 ```bash
-conda env create --file=FILE --format FORMAT
+conda env create --file FILE --format FORMAT
 ```
 
 See [`conda create` docs](https://docs.conda.io/projects/conda/en/stable/commands/create.html) for more details.
@@ -102,7 +103,7 @@ conda create --name myenv --file dev-lock.yml --format conda-lock-v1
 
 ```bash
 conda export --name myenv --format pixi --file pixi.lock
-conda create --name myenv --file pixi.lock --format=pixi
+conda create --name myenv --file pixi.lock --format pixi
 ```
 
 `pixi` resolves to `rattler-lock-v6` today. Use `--format

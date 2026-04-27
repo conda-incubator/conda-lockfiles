@@ -17,9 +17,9 @@ conda create --name my-env --file dev.conda-lock.yml
 conda create --name my-env --file pixi.lock
 
 # If the format is not detected from the filename:
-conda create --name my-env --file dev.yml --format=conda-lock
+conda create --name my-env --file dev.yml --format conda-lock
 # or, equivalently, using the canonical version-pinned name:
-conda create --name my-env --file dev.yml --format=conda-lock-v1
+conda create --name my-env --file dev.yml --format conda-lock-v1
 ```
 
 :::{tip}
