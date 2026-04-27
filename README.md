@@ -28,7 +28,7 @@ conda create --name ENV-NAME --format FORMAT --file /path/to/lockfile
 conda export --name ENV-NAME --format FORMAT --file /path/to/lockfile
 ```
 
-> [Note]
+> [!NOTE]
 > The `--format` flag is optional with `conda create` if conda recognizes your lockfile's file format.
 > Currently supported lockfile formats are:
 >
