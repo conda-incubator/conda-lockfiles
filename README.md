@@ -12,10 +12,10 @@ Support for different lockfiles in the `conda` CLI tool.
 conda-lockfiles adds support for additional lockfile formats to conda. It supports different types of lockfiles
 from the ecosystem like [conda-lock](https://github.com/conda/conda-lock) or [pixi](https://github.com/prefix-dev/pixi).
 
-A lockfile is a machine-generated file that records the exact versions and sources of every package 
-in a given environment, including all dependencies, in its fully-resolved state. Unlike with 
-`environment.yml`, `requirements.txt`, or similar files, lockfiles do not require the environment to be 
-solved again, which might introduce differences from the original environment. Lockfiles can reproduce 
+A lockfile is a machine-generated file that records the exact versions and sources of every package
+in a given environment, including all dependencies, in its fully-resolved state. Unlike with
+`environment.yml`, `requirements.txt`, or similar files, lockfiles do not require the environment to be
+solved again, which might introduce differences from the original environment. Lockfiles can reproduce
 exact environments across different machines and points in time again and again.
 
 The basic usage is:
