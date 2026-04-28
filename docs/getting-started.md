@@ -3,10 +3,9 @@
 The `conda-lockfiles` plugin is integrated directly into the following conda commands:
 
 - `conda create`
-- `conda env create`
 - `conda export`
 
-The `create`, `env create` and `export` commands allow you to create environments from lockfiles or
+The `create` and `export` commands allow you to create environments from lockfiles or
 save and share them, respectively.
 
 ## Using `conda create` or `conda env create` to create environments from lockfiles
@@ -15,12 +14,12 @@ save and share them, respectively.
 # Same committed file on another machine or in CI; conda uses the slice for the current subdir.  Autodetect format.
 conda create --name my-env --file conda-lock.yml
 conda create --name my-env --file dev.conda-lock.yml
-conda env create --name my-env  --file pixi.lock
+conda create --name my-env --file pixi.lock
 
 # If the format is not detected from the filename:
-conda env create --name my-env --file dev.yml --env-spec=conda-lock
+conda create --name my-env --file dev.yml --format conda-lock
 # or, equivalently, using the canonical version-pinned name:
-conda env create --name my-env --file dev.yml --env-spec=conda-lock-v1
+conda create --name my-env --file dev.yml --format conda-lock-v1
 ```
 
 :::{tip}
@@ -93,14 +92,14 @@ cannot be subsequently exported to the `win-64` platform.
 Simple export and create:
 ```shell
 conda export --file conda-lock.yml           # Auto-detects conda-lock-v1
-conda create -n prod --file conda-lock.yml   # Auto-detects conda-lock-v1
+conda create --name prod --file conda-lock.yml   # Auto-detects conda-lock-v1
 ```
 
 Create lock file to share across platforms:
 ```shell
 conda export --file conda-lock.yml --platform linux-64 --platform osx-arm64 --platform --win-64
 # Share conda-lock.yml with team
-conda create -n sharedenv --file conda-lock.yml
+conda create --name sharedenv --file conda-lock.yml
 ```
 
 
@@ -111,11 +110,11 @@ for py in 3.10 3.11 3.12 3.13 3.14; do
   ver="${py//./}"
   name="my_env-py${ver}"
   lock_file_name="py${ver}.conda-lock.yml"
-  conda create -y -n "${name}" --file requirements.txt "python=${py}"
+  conda create --yes --name "${name}" --file requirements.txt "python=${py}"
 
-  conda export -n "${name}" --file "${lock_file_name}" --format conda-lock-v1 --platform linux-64 --platform win-64 --platform osx-arm64
+  conda export --name "${name}" --file "${lock_file_name}" --format conda-lock-v1 --platform linux-64 --platform win-64 --platform osx-arm64
 
-  conda env remove -n "${name}" -y
+  conda env remove --name "${name}" --yes
 done
 ```
 
@@ -127,4 +126,4 @@ done
 - This project is still in beta; please file bugs and feature requests [here](https://github.com/conda-incubator/conda-lockfiles)
 
 ## A Note about `conda-lock`
-The conda-lock command is a specific command that can be used to create conda-lock.yaml files.  It will need to be installed separately. Currently, the only additional functionality it provides is being able to produce a lock file from an environment.yaml file.  For more information, see [here](https://github.com/conda/conda-lock).
+The conda-lock command is a specific command that can be used to create conda-lock.yaml files. It will need to be installed separately. Currently, the only additional functionality it provides is being able to produce a lock file from an environment.yaml file. For more information, see [the conda-lock GitHub repo](https://github.com/conda/conda-lock).
