@@ -12,34 +12,39 @@ Support for different lockfiles in the `conda` CLI tool.
 conda-lockfiles adds support for additional lockfile formats to conda. It supports different types of lockfiles
 from the ecosystem like [conda-lock](https://github.com/conda/conda-lock) or [pixi](https://github.com/prefix-dev/pixi).
 
+A lockfile is a machine-generated file that records the exact versions and sources of every package
+in a given environment, including all dependencies, in its fully-resolved state. Unlike with
+`environment.yml`, `requirements.txt`, or similar files, lockfiles do not require the environment to be
+solved again, which might introduce differences from the original environment. Lockfiles can reproduce
+exact environments across different machines and points in time again and again.
+
 The basic usage is:
 
 ```bash
 # Create environment from lockfile
-conda env create -n ENV-NAME --env-spec=FORMAT --file=/path/to/lockfile
+conda create --name ENV-NAME --format FORMAT --file /path/to/lockfile
 
 # Export current environment to lockfile
-conda export -n ENV-NAME --format=FORMAT --file=/path/to/lockfile
+conda export --name ENV-NAME --format FORMAT --file /path/to/lockfile
 ```
 
-Use **`--format`** with **`conda export`** (output format) and **`--env-spec`** with **`conda env create`** when you must name the input format; **`--env-spec`** is optional if conda recognizes the filename.
+If conda recognizes your lockfile's format, the `--format` flag is optional with `conda create`.
 
-Currently supported lockfile formats:
+Currently supported lockfile formats are:
 
 - `conda-lock.yml` / `conda-lock.yaml` — `conda-lock-v1` (alias: `conda-lock`)
 - `pixi.lock` — `rattler-lock-v6` (aliases: `pixi`, `pixi-lock-v6`)
 
-The version-pinned names (`-v1`, `-v6`) never change meaning. The short
-aliases track the current-stable version. See [format
-aliases](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html)
-for when to use which.
+The version-pinned names (such as `-v1`, `-v6`) never change meaning. The short
+aliases track the current-stable version. For information on when to use which name,
+see [format aliases](https://conda-incubator.github.io/conda-lockfiles/format-aliases.html).
 
 ## Installation
 
-This is a `conda` plugin and must be installed in the `base` environment:
+`conda-lockfiles` is a `conda` plugin and must be installed in the `base` environment:
 
 ```bash
-conda install -n base conda-forge::conda-lockfiles
+conda install --name base conda-forge::conda-lockfiles
 ```
 
 ## Usage
@@ -47,13 +52,13 @@ conda install -n base conda-forge::conda-lockfiles
 ### Creating a lockfile for the current environment
 
 ```bash
-conda export --format=FORMAT --file=FILE
+conda export --format FORMAT --file FILE
 ```
 
 To specify additional platforms:
 
 ```bash
-conda export --format=FORMAT --file=FILE [--override-platforms] --platform=PLATFORM ...
+conda export --format FORMAT --file FILE [--override-platforms] --platform PLATFORM ...
 ```
 
 See [`conda export` docs](https://docs.conda.io/projects/conda/en/stable/commands/export.html) for more details.
@@ -61,16 +66,16 @@ See [`conda export` docs](https://docs.conda.io/projects/conda/en/stable/command
 ### Creating a new environment from a lockfile
 
 ```bash
-conda env create --file=FILE
+conda create --file FILE
 ```
 
 If conda is unable to determine the file format:
 
 ```bash
-conda env create --file=FILE --env-spec=FORMAT
+conda env create --file FILE --format FORMAT
 ```
 
-See [`conda env create` docs](https://docs.conda.io/projects/conda/en/stable/commands/env/create.html) for more details.
+See [`conda create` docs](https://docs.conda.io/projects/conda/en/stable/commands/create.html) for more details.
 
 ### Examples
 
@@ -88,20 +93,20 @@ conda export \
 **Create an environment from that lockfile**:
 
 ```bash
-conda env create --name myenv --file conda-lock.yml
+conda create --name myenv --file conda-lock.yml
 # if the format is not auto-detected:
-conda env create --name myenv --file dev-lock.yml --env-spec=conda-lock-v1
+conda create --name myenv --file dev-lock.yml --format conda-lock-v1
 ```
 
 **Pixi / rattler lock v6**:
 
 ```bash
 conda export --name myenv --format pixi --file pixi.lock
-conda env create --name myenv --file pixi.lock --env-spec=pixi
+conda create --name myenv --file pixi.lock --format pixi
 ```
 
 `pixi` resolves to `rattler-lock-v6` today. Use `--format
-rattler-lock-v6` / `--env-spec=rattler-lock-v6` in committed lockfiles
+rattler-lock-v6` in committed lockfiles
 and CI so a future alias flip doesn't change the written format.
 <!-- docs-index-content-end -->
 

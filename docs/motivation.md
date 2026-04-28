@@ -3,7 +3,7 @@
 `conda-lockfiles` is a plugin that enables lockfile support in conda.
 To do this, we are standing on the shoulders of one very important project that
 came before it: [conda-lock](https://github.com/conda/conda-lock).
-This project is different from `conda-lock` in the following ways:
+The `conda-lockfiles` project is different from `conda-lock` in the following ways:
 
 1. Support for more than just the `conda-lock` format (e.g. `pixi-lock`)
 2. Integrated user experience that does not rely on separate subcommands (e.g.
