@@ -23,7 +23,7 @@
 ### Docs
 
 * Split the docs into an end-user reference and a Developer section. `docs/format-aliases.md` covers the user-facing alias contract; `docs/developer/maintaining.md` holds the bump policy and maintainer checklist; `docs/developer/contributing.md` pulls in the root `CONTRIBUTING.md`. (#130 and follow-up)
-* Refresh `README.md` and the getting-started guide for the current CLI. (#125)
+* Refresh `README.md` and the getting-started guide for the current CLI. (#125, #137)
 * Expand installation and usage instructions. (#72)
 
 ### Other
@@ -40,6 +40,7 @@
 * @danyeaw made their first contribution in https://github.com/conda-incubator/conda-lockfiles/pull/122
 * @jezdez
 * @kenodegard
+* @kkinnaman made their first contribution in https://github.com/conda-incubator/conda-lockfiles/pull/137
 * @ryanskeith made their first contribution in https://github.com/conda-incubator/conda-lockfiles/pull/125
 * @soapy1 made their first contribution in https://github.com/conda-incubator/conda-lockfiles/pull/92
 * @travishathaway
