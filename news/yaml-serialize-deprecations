@@ -1,0 +1,7 @@
+### Bug fixes
+
+* Replace deprecated conda YAML serialization helpers to avoid pending deprecation warnings. (#158)
+
+### Other
+
+* Raise the minimum conda requirement to 26.1.0 for `conda.common.serialize.yaml`. (#158)
