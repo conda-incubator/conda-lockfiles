@@ -1,22 +1,26 @@
+# edit this in https://github.com/conda/infrastructure
+
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: /
-    schedule:
-      interval: monthly
-    allow:
-      # Allow only production updates for Sphinx
-      - dependency-name: sphinx
-        dependency-type: production
-    groups:
-      pip:
-        patterns:
-          - '*'
   - package-ecosystem: github-actions
     directory: /.github/workflows
     schedule:
-      interval: monthly
+      interval: weekly
     groups:
       workflows:
         patterns:
           - '*'
+    cooldown:
+      default-days: 7
+      exclude:
+        - conda/actions
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      pre-commit:
+        patterns:
+          - '*'
+    cooldown:
+      default-days: 7
